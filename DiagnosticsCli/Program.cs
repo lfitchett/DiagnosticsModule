@@ -30,13 +30,14 @@ namespace DiagnosticsCli
             {
                 var sender = new WebSocketSender(webSocket, ct.Token);
 
+                /* TODO: find open source version. This is intended as a temporart hack. there should be a library that does this. */
                 CommandLineParser parser = new CommandLineParser();
 
+                /* Register list file command */
                 parser.RegisterCommand("ls", async () =>
                 {
                     Console.WriteLine(await sender.GetFileList());
                 });
-
                 RegisterGetFile(sender, parser);
 
                 while (true)
@@ -56,6 +57,11 @@ namespace DiagnosticsCli
             }
         }
 
+        /// <summary>
+        ///     Registers the "getfile" command. when getfile is used, it will parse source and destination and ask the module for the given file.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="parser"></param>
         static void RegisterGetFile(WebSocketSender sender, CommandLineParser parser)
         {
             string source = null;

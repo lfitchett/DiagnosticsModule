@@ -23,6 +23,7 @@ namespace DeviceStreams1
             this.webSocket = webSocket;
             this.cancellationToken = cancellationToken;
 
+            /* Define all actions. These will be called when the appropiate flag is sent. */
             actions = new Dictionary<Flag, Func<Task>>
             {
                 {
