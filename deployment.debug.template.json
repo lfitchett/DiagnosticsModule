@@ -14,6 +14,11 @@
                 "username": "$CONTAINER_REGISTRY_USERNAME_lefitchereg",
                 "password": "$CONTAINER_REGISTRY_PASSWORD_lefitchereg",
                 "address": "lefitchereg.azurecr.io"
+              },
+              "lefitche": {
+                "username": "$CONTAINER_REGISTRY_USERNAME_lefitche",
+                "password": "$CONTAINER_REGISTRY_PASSWORD_lefitche",
+                "address": "lefitche.azurecr.io"
               }
             }
           }
@@ -76,6 +81,16 @@
               "image": "mcr.microsoft.com/azureiotedge-simulated-temperature-sensor:1.0",
               "createOptions": {}
             }
+          },
+          "MATest": {
+            "version": "1.0",
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+              "image": "${MODULES.MATest.debug}",
+              "createOptions": {}
+            }
           }
         }
       }
@@ -85,7 +100,8 @@
         "schemaVersion": "1.0",
         "routes": {
           "DeviceDiagnosticsToIoTHub": "FROM /messages/modules/DeviceDiagnostics/outputs/* INTO $upstream",
-          "sensorToDeviceDiagnostics": "FROM /messages/modules/SimulatedTemperatureSensor/outputs/temperatureOutput INTO BrokeredEndpoint(\"/modules/DeviceDiagnostics/inputs/input1\")"
+          "sensorToDeviceDiagnostics": "FROM /messages/modules/SimulatedTemperatureSensor/outputs/temperatureOutput INTO BrokeredEndpoint(\"/modules/DeviceDiagnostics/inputs/input1\")",
+          "MATestToIoTHub": "FROM /messages/modules/MATest/outputs/* INTO $upstream"
         },
         "storeAndForwardConfiguration": {
           "timeToLiveSecs": 7200

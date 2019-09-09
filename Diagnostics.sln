@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DeviceStreamsUtilities", "D
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiagnosticsCli", "DiagnosticsCli\DiagnosticsCli.csproj", "{DF4F0CC8-3CAA-4D10-9433-D1B8AEFC4DA4}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MATest", "modules\MATest\MATest.csproj", "{F63971BE-448D-48C6-ADB2-C6F4E6BAD9B9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{DF4F0CC8-3CAA-4D10-9433-D1B8AEFC4DA4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DF4F0CC8-3CAA-4D10-9433-D1B8AEFC4DA4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DF4F0CC8-3CAA-4D10-9433-D1B8AEFC4DA4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F63971BE-448D-48C6-ADB2-C6F4E6BAD9B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F63971BE-448D-48C6-ADB2-C6F4E6BAD9B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F63971BE-448D-48C6-ADB2-C6F4E6BAD9B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F63971BE-448D-48C6-ADB2-C6F4E6BAD9B9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
