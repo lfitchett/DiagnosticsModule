@@ -10,10 +10,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectCapability Include="AzureIoTEdgeModule"/>
+    <ProjectCapability Include="AzureIoTEdgeModule" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="GenevaMonitoringAgent" Version="42.7.1" />
     <PackageReference Include="Microsoft.Azure.Devices.Client" Version="1.*" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.1.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="2.1.1" />
