@@ -1,5 +1,4 @@
 {
-  "$schema-template": "2.0.0",
   "modulesContent": {
     "$edgeAgent": {
       "properties.desired": {
@@ -11,8 +10,8 @@
             "loggingOptions": "",
             "registryCredentials": {
               "lefitchereg": {
-                "username": "$CONTAINER_REGISTRY_USERNAME_lefitchereg1",
-                "password": "$CONTAINER_REGISTRY_PASSWORD_lefitchereg1",
+                "username": "lefitcheReg1",
+                "password": "=NJMsnUgoUvcIYBIkEwI3kJqwPWw5Hby",
                 "address": "lefitchereg1.azurecr.io"
               }
             }
@@ -23,7 +22,7 @@
             "type": "docker",
             "settings": {
               "image": "mcr.microsoft.com/azureiotedge-agent:1.0",
-              "createOptions": {}
+              "createOptions": "{}"
             }
           },
           "edgeHub": {
@@ -32,27 +31,7 @@
             "restartPolicy": "always",
             "settings": {
               "image": "mcr.microsoft.com/azureiotedge-hub:1.0",
-              "createOptions": {
-                "HostConfig": {
-                  "PortBindings": {
-                    "5671/tcp": [
-                      {
-                        "HostPort": "5671"
-                      }
-                    ],
-                    "8883/tcp": [
-                      {
-                        "HostPort": "8883"
-                      }
-                    ],
-                    "443/tcp": [
-                      {
-                        "HostPort": "443"
-                      }
-                    ]
-                  }
-                }
-              }
+              "createOptions": "{\"HostConfig\":{\"PortBindings\":{\"5671/tcp\":[{\"HostPort\":\"5671\"}],\"8883/tcp\":[{\"HostPort\":\"8883\"}],\"443/tcp\":[{\"HostPort\":\"443\"}]}}}"
             }
           }
         },
@@ -63,14 +42,8 @@
             "status": "running",
             "restartPolicy": "always",
             "settings": {
-              "image": "${MODULES.DeviceDiagnostics}",
-              "createOptions": {
-                "HostConfig": {
-                  "Binds": [
-                    "/shared:/shared"
-                  ]
-                }
-              }
+              "image": "lefitchereg1.azurecr.io/devicediagnostics:0.0.2-amd64",
+              "createOptions": "{\"HostConfig\":{\"Binds\":[\"/shared:/shared\"]}}"
             }
           }
         }
