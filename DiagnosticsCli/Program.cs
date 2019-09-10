@@ -30,7 +30,7 @@ namespace DiagnosticsCli
             {
                 var sender = new WebSocketSender(webSocket, ct.Token);
 
-                /* TODO: find open source version. This is intended as a temporart hack. there should be a library that does this. */
+                /* TODO: find open source version. This is intended as a temporary hack. there should be a library that does this. */
                 CommandLineParser parser = new CommandLineParser();
 
                 /* Register list file command */

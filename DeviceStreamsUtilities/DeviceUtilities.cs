@@ -22,14 +22,8 @@ namespace DeviceStreamsUtilities
                 Console.WriteLine("Got connection request");
                 await moduleClient.AcceptDeviceStreamRequestAsync(request, ct).ConfigureAwait(false);
 
-                using (ClientWebSocket webSocket = new ClientWebSocket())
+                using (ClientWebSocket webSocket = await DeviceStreamWebsocket.MakeWebSocket(request.Url, request.AuthorizationToken, ct))
                 {
-                    Console.WriteLine("Making websocket");
-                    webSocket.Options.SetRequestHeader("Authorization", "Bearer " + request.AuthorizationToken);
-
-                    await webSocket.ConnectAsync(request.Url, ct).ConfigureAwait(false);
-                    Console.WriteLine("Connected");
-
                     try
                     {
                         await callback(webSocket, ct);

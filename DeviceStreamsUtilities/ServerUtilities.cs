@@ -8,19 +8,15 @@ namespace DeviceStreamsUtilities
 {
     public static class ServerUtilities
     {
-        public static async Task<ClientWebSocket> ConnectToDevice(this ServiceClient serviceClient, string deviceId, string streamName = "EdgeStream", CancellationToken? cancellationToken = null)
+        public static async Task<ClientWebSocket> ConnectToDevice(this ServiceClient serviceClient, string deviceId, string streamName = "EdgeStream", CancellationToken ct)
         {
             DeviceStreamRequest deviceStreamRequest = new DeviceStreamRequest(streamName);
 
             Console.WriteLine($"Connecting to {deviceId}");
-            DeviceStreamResponse stream = await serviceClient.CreateStreamAsync(deviceId, deviceStreamRequest, cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
-            Console.WriteLine($"Stream response received: Name={deviceStreamRequest.StreamName} IsAccepted={stream.IsAccepted}");
+            DeviceStreamResponse streamInfo = await serviceClient.CreateStreamAsync(deviceId, deviceStreamRequest, ct).ConfigureAwait(false);
+            Console.WriteLine($"Stream response received: Name={deviceStreamRequest.StreamName} IsAccepted={streamInfo.IsAccepted}");
 
-            ClientWebSocket webSocket = new ClientWebSocket();
-            webSocket.Options.SetRequestHeader("Authorization", "Bearer " + stream.AuthorizationToken);
-            await webSocket.ConnectAsync(stream.Url, cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
-
-            return webSocket;
+            return await DeviceStreamWebsocket.MakeWebSocket(streamInfo.Url, streamInfo.AuthorizationToken, ct);
         }
     }
 }
