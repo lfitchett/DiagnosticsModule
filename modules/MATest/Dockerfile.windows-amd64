@@ -2,12 +2,20 @@ FROM microsoft/dotnet:2.1-sdk AS build-env
 WORKDIR /app
 
 COPY *.csproj ./
-RUN dotnet restore
 
 COPY . ./
 RUN dotnet publish -c Release -o out
 
+
+
 FROM microsoft/dotnet:2.1-runtime-nanoserver-1809
+#FROM mcr.microsoft.com/windows/servercore:ltsc2019
+
+RUN mkdir c:\\Geneva
+COPY .\\DockerShim c:\\Geneva
+USER ContainerAdministrator
+RUN c:\\Geneva\\MonAgentDockerShimLauncher.exe -install
+
 WORKDIR /app
 COPY --from=build-env /app/out ./
 ENTRYPOINT ["dotnet", "MATest.dll"]
