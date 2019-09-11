@@ -80,7 +80,7 @@ namespace DeviceStreamsUtilities
             await webSocket.SendAsync(new ArraySegment<byte>(sendBuffer, 0, dataToSend.Length + 1), WebSocketMessageType.Binary, false, cancel);
         }
 
-        public async void Close()
+        public async Task Close()
         {
             onClose.Cancel();
 

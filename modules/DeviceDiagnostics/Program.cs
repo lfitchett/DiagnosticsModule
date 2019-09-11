@@ -18,10 +18,18 @@ namespace DeviceStreams1
             client.RegisterDeviceStreamCallback(TestRecieveAsync, CancellationToken.None).Wait();
         }
 
-        static async Task TestRecieveAsync(ClientWebSocket webSocket, CancellationToken token)
+        static async Task TestRecieveAsync(ClientWebSocket webSocket, CancellationToken ct)
         {
             Console.WriteLine("Recieved connection");
-            await new WebSocketReciever(webSocket, token).StartListening();
+            WebSocketManager manager = new WebSocketManager(webSocket);
+
+            manager.RegisterCallback(Flag.ListFiles, async (ArraySegment<byte> data, CancellationToken token) =>
+            {
+                await Task.Delay(100);
+                Console.WriteLine("Test");
+            }, ct);
+
+            await manager.StartRecieving(ct);
         }
     }
 }

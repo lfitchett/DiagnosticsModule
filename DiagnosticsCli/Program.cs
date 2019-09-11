@@ -1,4 +1,5 @@
 ﻿using DeviceStreamsUtilities;
+using Microsoft.Azure.Amqp.Framing;
 using Microsoft.Azure.Devices;
 using System;
 using System.Collections.Generic;
@@ -28,26 +29,33 @@ namespace DiagnosticsCli
             ServiceClient client = ServiceClient.CreateFromConnectionString(connString);
             using (ClientWebSocket webSocket = await client.ConnectToDevice(deviceId, ct.Token))
             {
-                var sender = new WebSocketSender(webSocket, ct.Token);
+                WebSocketManager manager = new WebSocketManager(webSocket);
 
-                /* TODO: find open source version. This is intended as a temporary hack. there should be a library that does this. */
-                CommandLineParser parser = new CommandLineParser();
+                byte[] test = { };
+                await manager.Send(Flag.ListFiles, test, ct.Token);
 
-                RegisterCommands(sender, parser);
+                await Task.Delay(1000);
 
-                while (true)
-                {
-                    Console.Write(">");
-                    string input = Console.ReadLine();
-                    if (input == "exit")
-                    {
-                        break;
-                    }
+                await manager.Close();
 
-                    await parser.ParseCommand(input);
-                }
+                ///* TODO: find open source version. This is intended as a temporary hack. there should be a library that does this. */
+                //CommandLineParser parser = new CommandLineParser();
 
-                await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Done", ct.Token);
+                //RegisterCommands(sender, parser);
+
+                //while (true)
+                //{
+                //    Console.Write(">");
+                //    string input = Console.ReadLine();
+                //    if (input == "exit")
+                //    {
+                //        break;
+                //    }
+
+                //    await parser.ParseCommand(input);
+                //}
+
+                //await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Done", ct.Token);
                 //while (webSocket.State != WebSocketState.Closed) { }
             }
         }
