@@ -3,6 +3,7 @@ namespace DeviceStreams1
     using System;
     using System.IO;
     using System.Net.WebSockets;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using DeviceStreamsUtilities;
@@ -25,8 +26,8 @@ namespace DeviceStreams1
 
             manager.RegisterCallback(Flag.ListFiles, async (ArraySegment<byte> data, CancellationToken token) =>
             {
-                await Task.Delay(100);
-                Console.WriteLine("Test");
+                Console.WriteLine("Sending text");
+                await manager.Send(Flag.Response, Encoding.UTF8.GetBytes("This is a test message"), token);
             }, ct);
 
             await manager.StartRecieving(ct);

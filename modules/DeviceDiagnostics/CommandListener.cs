@@ -18,8 +18,6 @@ namespace DeviceDiagnostics
         private readonly WebSocketManager manager;
         private readonly CancellationToken cancellationToken;
 
-        private readonly Dictionary<Flag, Func<Task>> actions;
-
         public CommandListener(ClientWebSocket webSocket, CancellationToken cancellationToken)
         {
             manager = new WebSocketManager(webSocket);
@@ -49,51 +47,11 @@ namespace DeviceDiagnostics
 
                 await manager.Send(Flag.Response, Encoding.UTF8.GetBytes(files), ct);
             }, CancellationToken.None);
-
-
-
-            /* Define all actions. These will be called when the appropiate flag is sent. */
-            actions = new Dictionary<Flag, Func<Task>>
-            {
-                {
-                    Flag.SendFile, async () => {
-                        Console.WriteLine("Getting file name.");
-                        string fileName = await webSocket.RecieveText(cancellationToken);
-                        Console.WriteLine($"Sending file: {fileName}");
-
-                        await webSocket.SendFile($"{DIRECTORY}/{fileName}", cancellationToken);
-                    }
-                },
-                {
-                    Flag.ListFiles, async () => {
-                        string files = string.Join('\n', Directory.GetFiles(DIRECTORY));
-                        if(files == "")
-                        {
-                            files = "No files in current directory";
-                        }
-
-                        await webSocket.SendText(files, cancellationToken);
-                    }
-                }
-            };
         }
 
         public async Task StartListening()
         {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                Flag flag = await webSocket.RecieveFlag(cancellationToken);
-                if (flag == Flag.Close)
-                    break;
-
-                if (actions.TryGetValue(flag, out var task))
-                {
-                    await task();
-                }
-            }
-
-            await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Done", cancellationToken);
-            while (webSocket.State != WebSocketState.Closed) { }
+            await manager.StartRecieving(cancellationToken);
         }
     }
 }

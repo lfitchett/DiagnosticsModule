@@ -121,6 +121,7 @@ namespace DeviceStreamsUtilities
         {
             Console.WriteLine("Closing connection");
             onClose.Cancel();
+            callbacks.Clear();
 
             await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Normal close", CancellationToken.None);
         }

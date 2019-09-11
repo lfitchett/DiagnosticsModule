@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,48 +17,62 @@ namespace DiagnosticsCli
     {
         static void Main(string[] args)
         {
-            TestSendAsync().GetAwaiter().GetResult();
+            Func<Task> temp = async () =>
+            {
+                CancellationTokenSource cancelSource = new CancellationTokenSource();
+                CancellationToken ct = cancelSource.Token;
+
+                string deviceId = "device4";
+                string connString = "HostName=lefitche-hub-3.azure-devices.net;SharedAccessKeyName=service;SharedAccessKey=s+3pkFuO8O4leS3mIFl1aW6O0/ASKEo85Cv0mjgrDUg=";
+
+
+
+                ServiceClient client = ServiceClient.CreateFromConnectionString(connString);
+                using (ClientWebSocket webSocket = await client.ConnectToDevice(deviceId, ct))
+                {
+                    WebSocketManager manager = new WebSocketManager(webSocket);
+
+                    manager.RegisterCallback(Flag.Response, async (ArraySegment<byte> data, CancellationToken _) =>
+                    {
+                        Console.WriteLine(Encoding.UTF8.GetString(data));
+                    }, CancellationToken.None);
+
+                    await Task.WhenAll(manager.StartRecieving(ct), TestSendAsync(manager, ct));
+                }
+
+            };
+
+            temp().Wait();
             Console.WriteLine("Done");
         }
 
-        static async Task TestSendAsync()
+        static async Task TestSendAsync(WebSocketManager manager, CancellationToken ct)
         {
-            CancellationTokenSource ct = new CancellationTokenSource();
-            string deviceId = "device4";
-            string connString = "HostName=lefitche-hub-3.azure-devices.net;SharedAccessKeyName=service;SharedAccessKey=s+3pkFuO8O4leS3mIFl1aW6O0/ASKEo85Cv0mjgrDUg=";
+            await manager.Send(Flag.ListFiles, ct);
 
-            ServiceClient client = ServiceClient.CreateFromConnectionString(connString);
-            using (ClientWebSocket webSocket = await client.ConnectToDevice(deviceId, ct.Token))
-            {
-                WebSocketManager manager = new WebSocketManager(webSocket);
+            await Task.Delay(10000);
 
-                byte[] test = { };
-                await manager.Send(Flag.ListFiles, test, ct.Token);
+            await manager.Close();
 
-                await Task.Delay(1000);
+            ///* TODO: find open source version. This is intended as a temporary hack. there should be a library that does this. */
+            //CommandLineParser parser = new CommandLineParser();
 
-                await manager.Close();
+            //RegisterCommands(sender, parser);
 
-                ///* TODO: find open source version. This is intended as a temporary hack. there should be a library that does this. */
-                //CommandLineParser parser = new CommandLineParser();
+            //while (true)
+            //{
+            //    Console.Write(">");
+            //    string input = Console.ReadLine();
+            //    if (input == "exit")
+            //    {
+            //        break;
+            //    }
 
-                //RegisterCommands(sender, parser);
+            //    await parser.ParseCommand(input);
+            //}
 
-                //while (true)
-                //{
-                //    Console.Write(">");
-                //    string input = Console.ReadLine();
-                //    if (input == "exit")
-                //    {
-                //        break;
-                //    }
-
-                //    await parser.ParseCommand(input);
-                //}
-
-                //await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Done", ct.Token);
-                //while (webSocket.State != WebSocketState.Closed) { }
-            }
+            //await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Done", ct.Token);
+            //while (webSocket.State != WebSocketState.Closed) { }
         }
 
         /// <summary>
