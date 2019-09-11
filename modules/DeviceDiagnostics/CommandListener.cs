@@ -13,7 +13,7 @@ namespace DeviceDiagnostics
 {
     public class CommandListener
     {
-        private const string DIRECTORY = @"C:\Users\Lee\Documents\Test";
+        private const string DIRECTORY = @"C:\Users\Lee\Documents\Test\From";
 
         private readonly WebSocketManager manager;
         private readonly CancellationToken cancellationToken;
@@ -30,16 +30,34 @@ namespace DeviceDiagnostics
 
             manager.RegisterCallback(Flag.SendFile, async (ArraySegment<byte> data, CancellationToken ct) =>
             {
-                Console.WriteLine("Getting file name.");
-                string fileName = await webSocket.RecieveText(cancellationToken);
+                string fileName = Encoding.UTF8.GetString(data);
                 Console.WriteLine($"Sending file: {fileName}");
 
-                await webSocket.SendFile($"{DIRECTORY}/{fileName}", ct);
+                try
+                {
+                    byte[] file = File.ReadAllBytes($"{DIRECTORY}/{fileName}");
+                    await manager.Send(Flag.SendFile, file, ct);
+                    await manager.Send(Flag.Response, Encoding.UTF8.GetBytes("Sent file"), ct);
+                }
+                catch (Exception ex)
+                {
+                    await manager.Send(Flag.Response, Encoding.UTF8.GetBytes(ex.Message), ct);
+                }
+
             }, CancellationToken.None);
 
             manager.RegisterCallback(Flag.ListFiles, async (ArraySegment<byte> data, CancellationToken ct) =>
             {
-                string files = string.Join('\n', Directory.GetFiles(DIRECTORY));
+                string files;
+                try
+                {
+                    files = string.Join('\n', Directory.GetFiles(DIRECTORY));
+                }
+                catch (Exception ex)
+                {
+                    files = ex.Message;
+                }
+
                 if (files == "")
                 {
                     files = "No files in current directory";

@@ -37,6 +37,19 @@ namespace DiagnosticsCli
                         Console.WriteLine(Encoding.UTF8.GetString(data));
                     }, CancellationToken.None);
 
+                    manager.RegisterCallback(Flag.SendFile, async (ArraySegment<byte> data, CancellationToken _) =>
+                    {
+                        byte[] file = data.ToArray();
+
+                        try
+                        {
+                            File.WriteAllBytes(@"C:\Users\Lee\Documents\Test\To\testFile.txt", file);
+                        }
+                        catch (Exception ex)
+                        {
+                            throw ex;
+                        }
+                    }, CancellationToken.None);
                     await Task.WhenAll(manager.StartRecieving(ct), TestSendAsync(manager, ct));
                 }
 
@@ -48,44 +61,37 @@ namespace DiagnosticsCli
 
         static async Task TestSendAsync(WebSocketManager manager, CancellationToken ct)
         {
-            await manager.Send(Flag.ListFiles, ct);
+            /* TODO: find open source version. This is intended as a temporary hack. there should be a library that does this. */
+            CommandLineParser parser = new CommandLineParser();
 
-            await Task.Delay(1000);
+            RegisterCommands(manager, parser, ct);
 
+            while (true)
+            {
+                Console.Write(">");
+                string input = Console.ReadLine();
+                if (input == "exit")
+                {
+                    break;
+                }
+
+                await parser.ParseCommand(input);
+            }
             await manager.Close();
 
-            ///* TODO: find open source version. This is intended as a temporary hack. there should be a library that does this. */
-            //CommandLineParser parser = new CommandLineParser();
-
-            //RegisterCommands(sender, parser);
-
-            //while (true)
-            //{
-            //    Console.Write(">");
-            //    string input = Console.ReadLine();
-            //    if (input == "exit")
-            //    {
-            //        break;
-            //    }
-
-            //    await parser.ParseCommand(input);
-            //}
-
-            //await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Done", ct.Token);
-            //while (webSocket.State != WebSocketState.Closed) { }
         }
 
         /// <summary>
         ///     Registers the "getfile" command. when getfile is used, it will parse source and destination and ask the module for the given file.
         /// </summary>
-        /// <param name="sender"></param>
+        /// <param name="manager"></param>
         /// <param name="parser"></param>
-        static void RegisterCommands(WebSocketSender sender, CommandLineParser parser)
+        static void RegisterCommands(WebSocketManager manager, CommandLineParser parser, CancellationToken ct)
         {
             /* Register list file command */
             parser.RegisterCommand("ls", async () =>
             {
-                Console.WriteLine(await sender.GetFileList());
+                await manager.Send(Flag.ListFiles, ct);
             });
 
             /* Register get file */
@@ -105,18 +111,18 @@ namespace DiagnosticsCli
 
             parser.RegisterCommand("getfile", async () =>
             {
-                if (destination == null)
-                {
-                    Console.WriteLine("Please use -d to set a destination");
-                    return;
-                }
+                //if (destination == null)
+                //{
+                //    Console.WriteLine("Please use -d to set a destination");
+                //    return;
+                //}
                 if (source == null)
                 {
                     Console.WriteLine("Please use -s to set a source");
                     return;
                 }
 
-                await sender.GetFile(source, destination);
+                await manager.Send(Flag.SendFile, Encoding.UTF8.GetBytes(source), ct);
                 Console.WriteLine($"Succesfilly saved {source} to {destination}");
             }, args);
         }

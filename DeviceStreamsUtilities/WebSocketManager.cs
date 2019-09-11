@@ -12,7 +12,7 @@ namespace DeviceStreamsUtilities
 {
     public class WebSocketManager
     {
-        private const int BUFFERSIZE = 1024;
+        private const int BUFFERSIZE = 10240;
 
         private readonly WebSocket webSocket;
 
@@ -161,8 +161,11 @@ namespace DeviceStreamsUtilities
             Console.WriteLine("Multi Recieve");
             //TODO: send flag in byte 1
             List<byte> data = new List<byte>();
+
+            int i = 0;
             while (!ct.IsCancellationRequested & webSocket.State == WebSocketState.Open)
             {
+                Console.WriteLine($"Recieved packet {i++}");
                 WebSocketReceiveResult receiveResult = await webSocket.ReceiveAsync(new ArraySegment<byte>(recieveBuffer), ct);
                 if (receiveResult.Count == 1)
                 {
