@@ -50,31 +50,38 @@ namespace DeviceStreamsUtilities
             CancellationToken cancel = CancellationTokenSource.CreateLinkedTokenSource(onClose.Token, ct).Token;
             while (!cancel.IsCancellationRequested && webSocket.State == WebSocketState.Open)
             {
-                WebSocketReceiveResult receiveResult = await webSocket.ReceiveAsync(new ArraySegment<byte>(recieveBuffer), cancel);
-                if (receiveResult.Count == 0)
+                try
                 {
-                    continue;
-                }
+                    WebSocketReceiveResult receiveResult = await webSocket.ReceiveAsync(new ArraySegment<byte>(recieveBuffer), cancel);
+                    if (receiveResult.Count == 0)
+                    {
+                        continue;
+                    }
 
-                ArraySegment<byte> data;
-                Flag flag = (Flag)recieveBuffer[0];
-                if (flag == Flag.MultiPartStart)
-                {
-                    flag = (Flag)recieveBuffer[1];
-                    data = new ArraySegment<byte>(await RecieveMultiPart(cancel));
-                }
-                else
-                {
-                    data = new ArraySegment<byte>(recieveBuffer, 1, receiveResult.Count - 1);
-                }
+                    ArraySegment<byte> data;
+                    Flag flag = (Flag)recieveBuffer[0];
+                    if (flag == Flag.MultiPartStart)
+                    {
+                        flag = (Flag)recieveBuffer[1];
+                        data = new ArraySegment<byte>(await RecieveMultiPart(cancel));
+                    }
+                    else
+                    {
+                        data = new ArraySegment<byte>(recieveBuffer, 1, receiveResult.Count - 1);
+                    }
 
-                if (callbacks.TryGetValue(flag, out var callback))
-                {
-                    await callback(data, cancel);
+                    if (callbacks.TryGetValue(flag, out var callback))
+                    {
+                        await callback(data, cancel);
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Did not have callback registered for flag {flag}");
+                    }
                 }
-                else
+                catch (OperationCanceledException _)
                 {
-                    Console.WriteLine($"Did not have callback registered for flag {flag}");
+                    break;
                 }
             }
 
@@ -119,11 +126,14 @@ namespace DeviceStreamsUtilities
         /// <returns></returns>
         public async Task Close()
         {
-            Console.WriteLine("Closing connection");
+            if (webSocket.State == WebSocketState.Open)
+            {
+                Console.WriteLine("Closing connection");
+                await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Normal close", CancellationToken.None);
+            }
+
             onClose.Cancel();
             callbacks.Clear();
-
-            await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Normal close", CancellationToken.None);
         }
 
         private async Task SendMultiPart(Flag flag, byte[] dataToSend, CancellationToken ct)
@@ -152,7 +162,7 @@ namespace DeviceStreamsUtilities
                 WebSocketReceiveResult receiveResult = await webSocket.ReceiveAsync(new ArraySegment<byte>(recieveBuffer), ct);
                 if (receiveResult.Count == 1)
                 {
-                    if((Flag)recieveBuffer[0] == Flag.MultiPartEnd)
+                    if ((Flag)recieveBuffer[0] == Flag.MultiPartEnd)
                     {
                         break;
                     }

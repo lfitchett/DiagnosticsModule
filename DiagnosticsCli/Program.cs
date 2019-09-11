@@ -50,7 +50,7 @@ namespace DiagnosticsCli
         {
             await manager.Send(Flag.ListFiles, ct);
 
-            await Task.Delay(10000);
+            await Task.Delay(1000);
 
             await manager.Close();
 
