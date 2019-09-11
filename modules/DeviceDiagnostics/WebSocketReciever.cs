@@ -13,6 +13,8 @@ namespace DeviceStreams1
 {
     public class WebSocketReciever
     {
+        private const string DIRECTORY = @"C:\Users\Lee\Documents\Test";
+
         private readonly ClientWebSocket webSocket;
         private readonly CancellationToken cancellationToken;
 
@@ -23,6 +25,11 @@ namespace DeviceStreams1
             this.webSocket = webSocket;
             this.cancellationToken = cancellationToken;
 
+            if (!Directory.Exists(DIRECTORY))
+            {
+                throw new Exception($"Directory not found: {DIRECTORY}");
+            }
+
             /* Define all actions. These will be called when the appropiate flag is sent. */
             actions = new Dictionary<Flag, Func<Task>>
             {
@@ -32,11 +39,19 @@ namespace DeviceStreams1
                         string fileName = await webSocket.RecieveText(cancellationToken);
                         Console.WriteLine($"Sending file: {fileName}");
 
-                        await webSocket.SendFile($"/shared/{fileName}", cancellationToken);
+                        await webSocket.SendFile($"{DIRECTORY}/{fileName}", cancellationToken);
                     }
                 },
                 {
-                    Flag.ListFiles, async () => await webSocket.SendText(string.Join('\n', Directory.GetFiles(@"/shared")), cancellationToken)
+                    Flag.ListFiles, async () => {
+                        string files = string.Join('\n', Directory.GetFiles(DIRECTORY));
+                        if(files == "")
+                        {
+                            files = "No files in current directory";
+                        }
+
+                        await webSocket.SendText(files, cancellationToken);
+                    }
                 }
             };
         }

@@ -26,19 +26,14 @@ namespace DiagnosticsCli
             string connString = "HostName=lefitche-hub-3.azure-devices.net;SharedAccessKeyName=service;SharedAccessKey=s+3pkFuO8O4leS3mIFl1aW6O0/ASKEo85Cv0mjgrDUg=";
 
             ServiceClient client = ServiceClient.CreateFromConnectionString(connString);
-            using (ClientWebSocket webSocket = await client.ConnectToDevice(deviceId))
+            using (ClientWebSocket webSocket = await client.ConnectToDevice(deviceId, ct.Token))
             {
                 var sender = new WebSocketSender(webSocket, ct.Token);
 
                 /* TODO: find open source version. This is intended as a temporary hack. there should be a library that does this. */
                 CommandLineParser parser = new CommandLineParser();
 
-                /* Register list file command */
-                parser.RegisterCommand("ls", async () =>
-                {
-                    Console.WriteLine(await sender.GetFileList());
-                });
-                RegisterGetFile(sender, parser);
+                RegisterCommands(sender, parser);
 
                 while (true)
                 {
@@ -62,8 +57,15 @@ namespace DiagnosticsCli
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="parser"></param>
-        static void RegisterGetFile(WebSocketSender sender, CommandLineParser parser)
+        static void RegisterCommands(WebSocketSender sender, CommandLineParser parser)
         {
+            /* Register list file command */
+            parser.RegisterCommand("ls", async () =>
+            {
+                Console.WriteLine(await sender.GetFileList());
+            });
+
+            /* Register get file */
             string source = null;
             Action<string> setSource = (string val) => source = val;
 

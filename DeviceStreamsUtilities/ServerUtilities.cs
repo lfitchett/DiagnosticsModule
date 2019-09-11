@@ -8,7 +8,7 @@ namespace DeviceStreamsUtilities
 {
     public static class ServerUtilities
     {
-        public static async Task<ClientWebSocket> ConnectToDevice(this ServiceClient serviceClient, string deviceId, string streamName = "EdgeStream", CancellationToken ct)
+        public static async Task<ClientWebSocket> ConnectToDevice(this ServiceClient serviceClient, string deviceId, CancellationToken ct, string streamName = "EdgeStream")
         {
             DeviceStreamRequest deviceStreamRequest = new DeviceStreamRequest(streamName);
 

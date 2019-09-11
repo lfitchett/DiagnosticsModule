@@ -46,7 +46,7 @@ namespace DeviceStreamsUtilities
         {
             byte[] buffer = new byte[BUFFER_SIZE];
 
-            //Console.WriteLine("Waiting for data");
+            Console.WriteLine("Waiting for data");
 
             Stream result = new MemoryStream();
             while (webSocket.State == WebSocketState.Open)
@@ -54,15 +54,15 @@ namespace DeviceStreamsUtilities
                 var receiveResult = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), cancellationToken).ConfigureAwait(false);
                 if (buffer[0] == 1)
                 {
-                    //Console.WriteLine($"End of message. {receiveResult.Count}");
+                    Console.WriteLine($"End of message. {receiveResult.Count}");
                     break;
                 }
-                //Console.WriteLine($"Got {receiveResult.Count - 1} bytes");
+                Console.WriteLine($"Got {receiveResult.Count - 1} bytes");
 
                 result.Write(buffer, 1, receiveResult.Count - 1);
             }
 
-            //Console.WriteLine("Downloaded file");
+            Console.WriteLine("Downloaded file");
 
             return result;
         }

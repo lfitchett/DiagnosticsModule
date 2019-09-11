@@ -17,10 +17,19 @@ namespace DeviceStreamsUtilities
             while (!ct.IsCancellationRequested)
             {
                 Console.WriteLine("Waiting for connection request");
-                DeviceStreamRequest request = await moduleClient.WaitForDeviceStreamRequestAsync(ct);
+                DeviceStreamRequest request;
+                try
+                {
+                    request = await moduleClient.WaitForDeviceStreamRequestAsync(ct);
 
-                Console.WriteLine("Got connection request");
-                await moduleClient.AcceptDeviceStreamRequestAsync(request, ct).ConfigureAwait(false);
+                    Console.WriteLine("Got connection request");
+                    await moduleClient.AcceptDeviceStreamRequestAsync(request, ct).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Request got exeption");
+                    throw ex;
+                }
 
                 using (ClientWebSocket webSocket = await DeviceStreamWebsocket.MakeWebSocket(request.Url, request.AuthorizationToken, ct))
                 {
