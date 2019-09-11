@@ -12,7 +12,7 @@ namespace DeviceStreamsUtilities
 {
     public class WebSocketManager
     {
-        private const int BUFFERSIZE = 10240;
+        private const int BUFFERSIZE = 1024;
 
         private readonly WebSocket webSocket;
 
@@ -79,7 +79,7 @@ namespace DeviceStreamsUtilities
                         Console.WriteLine($"Did not have callback registered for flag {flag}");
                     }
                 }
-                catch (OperationCanceledException _)
+                catch (OperationCanceledException)
                 {
                     break;
                 }
@@ -138,23 +138,27 @@ namespace DeviceStreamsUtilities
 
         private async Task SendMultiPart(Flag flag, byte[] dataToSend, CancellationToken ct)
         {
+            Console.WriteLine("Multisend");
             sendBuffer[0] = (byte)Flag.MultiPartStart;
             sendBuffer[1] = (byte)flag;
             await webSocket.SendAsync(new ArraySegment<byte>(sendBuffer, 0, 2), WebSocketMessageType.Binary, true, ct);
 
             int currIndex = 0;
-            while (currIndex < dataToSend.Length)
+            while (currIndex < dataToSend.Length - BUFFERSIZE)
             {
+                Console.WriteLine($"Sending bytes index: {currIndex}");
                 await webSocket.SendAsync(new ArraySegment<byte>(dataToSend, currIndex, BUFFERSIZE), WebSocketMessageType.Binary, true, ct);
                 currIndex += BUFFERSIZE;
             }
-            await webSocket.SendAsync(new ArraySegment<byte>(dataToSend, currIndex, BUFFERSIZE - currIndex), WebSocketMessageType.Binary, true, ct);
+            await webSocket.SendAsync(new ArraySegment<byte>(dataToSend, currIndex, dataToSend.Length - currIndex), WebSocketMessageType.Binary, true, ct);
 
             await Send(Flag.MultiPartEnd, ct);
+            Console.WriteLine("Multisend done");
         }
 
         private async Task<byte[]> RecieveMultiPart(CancellationToken ct)
         {
+            Console.WriteLine("Multi Recieve");
             //TODO: send flag in byte 1
             List<byte> data = new List<byte>();
             while (!ct.IsCancellationRequested & webSocket.State == WebSocketState.Open)
@@ -176,6 +180,7 @@ namespace DeviceStreamsUtilities
                 data.AddRange(new ArraySegment<byte>(recieveBuffer, 0, receiveResult.Count));
             }
 
+            Console.WriteLine("Multi Recieve Done");
             return data.ToArray();
         }
     }
