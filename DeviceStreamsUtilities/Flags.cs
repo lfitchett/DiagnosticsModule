@@ -8,6 +8,9 @@ namespace DeviceStreamsUtilities
     {
         Close,
         SendFile,
-        ListFiles
+        ListFiles,
+        Response,
+        MultiPartStart,
+        MultiPartEnd,
     }
 }

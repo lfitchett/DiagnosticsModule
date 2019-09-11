@@ -56,8 +56,18 @@ namespace DeviceStreamsUtilities
                     continue;
                 }
 
+                ArraySegment<byte> data;
                 Flag flag = (Flag)recieveBuffer[0];
-                ArraySegment<byte> data = new ArraySegment<byte>(recieveBuffer, 1, receiveResult.Count - 1);
+                if (flag == Flag.MultiPartStart)
+                {
+                    flag = (Flag)recieveBuffer[1];
+                    data = new ArraySegment<byte>(await RecieveMultiPart(cancel));
+                }
+                else
+                {
+                    data = new ArraySegment<byte>(recieveBuffer, 1, receiveResult.Count - 1);
+                }
+
                 if (callbacks.TryGetValue(flag, out var callback))
                 {
                     await callback(data, cancel);
@@ -85,7 +95,8 @@ namespace DeviceStreamsUtilities
 
             if (dataToSend.Length > BUFFERSIZE - 1)
             {
-                throw new Exception("Too much data");
+                await SendMultiPart(flag, dataToSend, ct);
+                return;
             }
 
             sendBuffer[0] = (byte)flag;
@@ -112,6 +123,49 @@ namespace DeviceStreamsUtilities
             onClose.Cancel();
 
             await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Normal close", CancellationToken.None);
+        }
+
+        private async Task SendMultiPart(Flag flag, byte[] dataToSend, CancellationToken ct)
+        {
+            sendBuffer[0] = (byte)Flag.MultiPartStart;
+            sendBuffer[1] = (byte)flag;
+            await webSocket.SendAsync(new ArraySegment<byte>(sendBuffer, 0, 2), WebSocketMessageType.Binary, true, ct);
+
+            int currIndex = 0;
+            while (currIndex < dataToSend.Length)
+            {
+                await webSocket.SendAsync(new ArraySegment<byte>(dataToSend, currIndex, BUFFERSIZE), WebSocketMessageType.Binary, true, ct);
+                currIndex += BUFFERSIZE;
+            }
+            await webSocket.SendAsync(new ArraySegment<byte>(dataToSend, currIndex, BUFFERSIZE - currIndex), WebSocketMessageType.Binary, true, ct);
+
+            await Send(Flag.MultiPartEnd, ct);
+        }
+
+        private async Task<byte[]> RecieveMultiPart(CancellationToken ct)
+        {
+            //TODO: send flag in byte 1
+            List<byte> data = new List<byte>();
+            while (!ct.IsCancellationRequested & webSocket.State == WebSocketState.Open)
+            {
+                WebSocketReceiveResult receiveResult = await webSocket.ReceiveAsync(new ArraySegment<byte>(recieveBuffer), ct);
+                if (receiveResult.Count == 1)
+                {
+                    if((Flag)recieveBuffer[0] == Flag.MultiPartEnd)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        Console.Write("Send interupted, canceling");
+                        break;
+                    }
+                }
+
+                data.AddRange(new ArraySegment<byte>(recieveBuffer, 0, receiveResult.Count));
+            }
+
+            return data.ToArray();
         }
     }
 }
