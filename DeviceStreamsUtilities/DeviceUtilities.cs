@@ -13,6 +13,7 @@ namespace DeviceStreamsUtilities
     {
         public static async Task RegisterDeviceStreamCallback(this DeviceClient moduleClient, Func<ClientWebSocket, CancellationToken, Task> callback, CancellationToken ct)
         {
+            int sleeptime = 1000;
             // This will run until the cancelation token is canceled
             while (!ct.IsCancellationRequested)
             {
@@ -27,9 +28,19 @@ namespace DeviceStreamsUtilities
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Request got exeption");
-                    throw ex;
+                    Console.WriteLine("Request got exeption:");
+                    Console.WriteLine(ex);
+
+                    Console.WriteLine($"Trying again in {sleeptime} seconds.");
+                    await Task.Delay(sleeptime);
+                    /* Max sleeptime is 10 minutes */
+                    if (sleeptime < 1000 * 60 * 10)
+                    {
+                        sleeptime *= 2;
+                    }
+                    continue;
                 }
+                sleeptime = 1000;
 
                 using (ClientWebSocket webSocket = await DeviceStreamWebsocket.MakeWebSocket(request.Url, request.AuthorizationToken, ct))
                 {
@@ -39,6 +50,7 @@ namespace DeviceStreamsUtilities
                     }
                     catch (Exception ex)
                     {
+                        Console.WriteLine("Websocket threw exception.");
                         Console.WriteLine(ex);
                     }
 

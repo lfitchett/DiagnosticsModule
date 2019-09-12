@@ -13,6 +13,7 @@ namespace DeviceStreamsUtilities
         MultiPartStart,
         MultiPartEnd,
         FileStart,
+        FilePart,
         FileEnd,
     }
 }

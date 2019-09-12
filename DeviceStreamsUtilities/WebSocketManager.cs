@@ -59,32 +59,7 @@ namespace DeviceStreamsUtilities
                         continue;
                     }
 
-                    ArraySegment<byte> data;
-                    Flag flag = (Flag)recieveBuffer[0];
-                    if (flag == Flag.MultiPartStart)
-                    {
-                        flag = (Flag)recieveBuffer[1];
-                        data = new ArraySegment<byte>(await RecieveMultiPart(cancel));
-                    }
-                    else
-                    {
-                        data = new ArraySegment<byte>(recieveBuffer, 1, receiveResult.Count - 1);
-                    }
-
-                    if(flag == Flag.FileStart)
-                    {
-                        await RecieveFile(Encoding.UTF8.GetString(data.ToArray()), ct);
-                        continue;
-                    }
-
-                    if (callbacks.TryGetValue(flag, out var callback))
-                    {
-                        await callback(data, cancel);
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Did not have callback registered for flag {flag}");
-                    }
+                    await HandleRecieve(receiveResult, cancel);
                 }
                 catch (OperationCanceledException)
                 {
@@ -94,6 +69,46 @@ namespace DeviceStreamsUtilities
             }
 
             await Close();
+        }
+
+        /// <summary>
+        ///     Parses recieve buffer and calls appropriate method based on recieved flag.
+        /// </summary>
+        /// <param name="receiveResult"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        private async Task HandleRecieve(WebSocketReceiveResult receiveResult, CancellationToken ct)
+        {
+            ArraySegment<byte> data;
+            Flag flag = (Flag)recieveBuffer[0];
+            if (flag == Flag.MultiPartStart)
+            {
+                flag = (Flag)recieveBuffer[1];
+                data = new ArraySegment<byte>(await RecieveMultiPart(ct));
+            }
+            else
+            {
+                data = new ArraySegment<byte>(recieveBuffer, 1, receiveResult.Count - 1);
+            }
+
+            if (flag == Flag.FileStart)
+            {
+                await RecieveFile(Encoding.UTF8.GetString(data.ToArray()), ct);
+                return;
+            }
+            if (flag == Flag.FilePart)
+            {
+                Console.WriteLine("Recieved unexpected file packet. Ignoring.");
+                return;
+            }
+
+            if (callbacks.TryGetValue(flag, out var callback))
+            {
+                await callback(data, ct);
+                return;
+            }
+
+            Console.WriteLine($"Did not have callback registered for flag {flag}");
         }
 
         /// <summary>
