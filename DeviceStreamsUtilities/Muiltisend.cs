@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DeviceStreamsUtilities
 {
-    private partial class WebSocketManager
+    public partial class WebSocketManager
     {
         /// <summary>
         ///     Sends large amounts of data in multiple messages.

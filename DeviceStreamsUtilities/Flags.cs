@@ -12,5 +12,7 @@ namespace DeviceStreamsUtilities
         Response,
         MultiPartStart,
         MultiPartEnd,
+        FileStart,
+        FileEnd,
     }
 }
