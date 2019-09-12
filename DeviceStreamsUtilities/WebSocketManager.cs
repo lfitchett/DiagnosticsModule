@@ -2,6 +2,7 @@
 using Microsoft.Azure.Amqp.Framing;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.WebSockets;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -70,6 +71,12 @@ namespace DeviceStreamsUtilities
                         data = new ArraySegment<byte>(recieveBuffer, 1, receiveResult.Count - 1);
                     }
 
+                    if(flag == Flag.FileStart)
+                    {
+                        await RecieveFile(Encoding.UTF8.GetString(data.ToArray()), ct);
+                        continue;
+                    }
+
                     if (callbacks.TryGetValue(flag, out var callback))
                     {
                         await callback(data, cancel);
@@ -81,6 +88,7 @@ namespace DeviceStreamsUtilities
                 }
                 catch (OperationCanceledException)
                 {
+                    Console.WriteLine("Request was canceled");
                     break;
                 }
             }

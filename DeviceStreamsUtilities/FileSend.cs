@@ -10,9 +10,9 @@ namespace DeviceStreamsUtilities
 {
     public partial class WebSocketManager
     {
-        private async Task SendFile(string source, string destination, CancellationToken ct)
+        public async Task SendFile(string source, string destination, CancellationToken ct)
         {
-            Console.WriteLine("Filesend");
+            Console.WriteLine($"Sending file: {source} to destination {destination}");
             await Send(Flag.FileStart, Encoding.UTF8.GetBytes(destination), ct);
 
             using (var file = File.OpenRead(source))

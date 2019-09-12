@@ -30,13 +30,20 @@ namespace DeviceDiagnostics
 
             manager.RegisterCallback(Flag.SendFile, async (ArraySegment<byte> data, CancellationToken ct) =>
             {
-                string fileName = Encoding.UTF8.GetString(data);
-                Console.WriteLine($"Sending file: {fileName}");
+                /* | is not allowed in file paths, so it can act as a seperator */
+                string[] locations = Encoding.UTF8.GetString(data).Split('|');
+                if(locations.Length != 2)
+                {
+                    Console.WriteLine("Invalid source and destination");
+                    await manager.Send(Flag.Response, Encoding.UTF8.GetBytes("Invalid source and destination"), ct);
+                    return;
+                }
+                string source = locations[0];
+                string destination = locations[1];
 
                 try
                 {
-                    byte[] file = File.ReadAllBytes($"{DIRECTORY}/{fileName}");
-                    await manager.Send(Flag.SendFile, file, ct);
+                    await manager.SendFile($"{DIRECTORY}/{source}", destination, ct);
                     await manager.Send(Flag.Response, Encoding.UTF8.GetBytes("Sent file"), ct);
                 }
                 catch (Exception ex)
