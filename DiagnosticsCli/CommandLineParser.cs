@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,76 +11,84 @@ namespace DiagnosticsCli
     {
         private Dictionary<string, Tuple<Func<Task>, Dictionary<string, Action<string>>>> commands = new Dictionary<string, Tuple<Func<Task>, Dictionary<string, Action<string>>>>();
 
-        public void RegisterCommand(string command, Func<Task> action, Dictionary<string, Action<string>> args = null)
+        public void RegisterCommand(string command, Func<Task> action, Dictionary<string, Action<string>> flags = null)
         {
-            commands.Add(command, Tuple.Create(action, args));
+            commands.Add(command, Tuple.Create(action, flags));
         }
 
         public async Task ParseCommand(string rawInput)
         {
-            var iter = rawInput.Split(" ").GetEnumerator();
-            if (!iter.MoveNext())
+            List<string> args = SplitInput(rawInput);
+
+            string command = args.FirstOrDefault();
+            if (command == null || !commands.ContainsKey(command))
             {
+                Console.WriteLine($"Command \"{command}\" not recognized");
                 return;
             }
 
-            /* Parse Command */
-            Func<Task> action;
-            Dictionary<string, Action<string>> args;
-            if (commands.TryGetValue((string)iter.Current, out var temp))
-            {
-                action = temp.Item1;
-                args = temp.Item2;
-            }
-            else
-            {
-                Console.WriteLine("Command not recognized");
-                return;
-            }
+            (Func<Task> action, Dictionary<string, Action<string>> flags) = commands[command];
 
-            /* Parse args */
-            if (args != null)
+            int argNum = 0;
+            var iter = args.Skip(1).GetEnumerator();
+            while (iter.MoveNext())
             {
-                while (iter.MoveNext())
+                string flag;
+                if (iter.Current.StartsWith('-'))
                 {
-                    /* See if flag exists */
-                    if (args.TryGetValue((string)iter.Current, out var setArg))
+                    flag = iter.Current;
+                    if (!iter.MoveNext())
                     {
-                        if (!iter.MoveNext())
-                        {
-                            Console.WriteLine($"Flag {iter.Current} needs an argument");
-                            return;
-                        }
-
-                        Func<bool> iterHasQuote = () => ((string)iter.Current).Contains('"');
-                        string argValue;
-                        if (!iterHasQuote())
-                        {
-                            argValue = (string)iter.Current;
-                        }
-                        else
-                        {
-                            /* if arg value is in quotes, argValue goes until the end quote */
-                            argValue = ((string)iter.Current).Remove(0, 1) + ' ';
-                            while (iter.MoveNext() && !iterHasQuote())
-                            {
-                                argValue += ((string)iter.Current) + ' ';
-                            }
-                            argValue += ((string)iter.Current).Remove(((string)iter.Current).Length - 1);
-                        }
-
-                        /* call flag function with argValue */
-                        setArg(argValue);
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Flag {iter.Current} not recognized");
+                        Console.WriteLine($"Flag {flag} had no argument.");
+                        break;
                     }
                 }
+                else
+                {
+                    flag = $"{argNum++}";
+                }
+
+
             }
 
-            /* Execute given command */
-            await action();
+
+        }
+
+        private List<string> SplitInput(string rawInput)
+        {
+            List<string> args = new List<string>();
+            StringBuilder currArg = new StringBuilder();
+            bool isInsideQuote = false;
+            foreach (char ch in rawInput)
+            {
+                if (!isInsideQuote && ch == ' ')
+                {
+                    if (currArg.Length != 0)
+                    {
+                        args.Add(currArg.ToString());
+                        currArg.Clear();
+                    }
+                    break;
+                }
+
+                if (ch == '"')
+                {
+                    if (isInsideQuote)
+                    {
+                        args.Add(currArg.ToString());
+                        currArg.Clear();
+                        isInsideQuote = false;
+                        break;
+                    }
+
+                    isInsideQuote = true;
+                    break;
+                }
+
+                currArg.Append(ch);
+            }
+
+            return args;
         }
     }
 }
