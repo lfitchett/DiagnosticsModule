@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.WebSockets;
 using System.Text;
@@ -21,9 +22,11 @@ namespace DeviceStreamsUtilities
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
+            /* serialize and send request */
             byte[] data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(request));
-            await websocket.SendAsync(new ArraySegment<byte>(data), WebSocketMessageType.Text, true, cancellationToken);
+            await websocket.SendAsync(new ArraySegment<byte>(data), WebSocketMessageType.Binary, true, cancellationToken);
 
+            /* recieve headers */
             WebSocketReceiveResult websocketResponse = await websocket.ReceiveAsync(new ArraySegment<byte>(responseBuffer), cancellationToken);
             string rawResponse = Encoding.UTF8.GetString(responseBuffer, 0, websocketResponse.Count);
 
@@ -33,7 +36,22 @@ namespace DeviceStreamsUtilities
                 rawResponse += Encoding.UTF8.GetString(responseBuffer, 0, websocketResponse.Count);
             }
 
-            return JsonConvert.DeserializeObject<HttpResponseMessage>(rawResponse);
+            /* recieve body */
+            websocketResponse = await websocket.ReceiveAsync(new ArraySegment<byte>(responseBuffer), cancellationToken);
+            List<byte> rawBody = new List<byte>();
+            rawBody.AddRange(responseBuffer.Take(websocketResponse.Count));
+
+            while (!websocketResponse.EndOfMessage)
+            {
+                websocketResponse = await websocket.ReceiveAsync(new ArraySegment<byte>(responseBuffer), cancellationToken);
+                rawBody.AddRange(responseBuffer.Take(websocketResponse.Count));
+            }
+
+            /* reconstruct response */
+            HttpResponseMessage response = JsonConvert.DeserializeObject<HttpResponseMessage>(rawResponse);
+            response.Content = new ByteArrayContent(rawBody.ToArray());
+
+            return response;
         }
     }
 }

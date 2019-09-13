@@ -1,10 +1,12 @@
 ﻿using DeviceStreamsUtilities;
 using Microsoft.Azure.Amqp.Framing;
 using Microsoft.Azure.Devices;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Net.WebSockets;
 using System.Security.Cryptography;
 using System.Text;
@@ -29,105 +31,20 @@ namespace DiagnosticsCli
 
                 ServiceClient client = ServiceClient.CreateFromConnectionString(connString);
                 using (ClientWebSocket webSocket = await client.ConnectToDevice(deviceId, ct))
+                using (HttpClient httpClient = new HttpClient(new WebsocketHttpMessageHandler(webSocket)))
                 {
-                    WebSocketManager manager = new WebSocketManager(webSocket);
+                    var response = await httpClient.GetAsync(@"https://www.google.com/search?q=test");
+                    var body = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine(response);
+                    Console.WriteLine(body);
 
-                    manager.RegisterCallback(Flag.Response, async (ArraySegment<byte> data, CancellationToken _) =>
-                    {
-                        Console.WriteLine(Encoding.UTF8.GetString(data));
-                    }, CancellationToken.None);
-
-                    manager.RegisterCallback(Flag.SendFile, async (ArraySegment<byte> data, CancellationToken _) =>
-                    {
-                        byte[] file = data.ToArray();
-
-                        try
-                        {
-                            File.WriteAllBytes(@"C:\Users\Lee\Documents\Test\To\testFile.txt", file);
-                        }
-                        catch (Exception ex)
-                        {
-                            throw ex;
-                        }
-                    }, CancellationToken.None);
-                    await Task.WhenAll(manager.StartRecieving(ct), TestSendAsync(manager, ct));
+                    await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Normal close", CancellationToken.None);
                 }
 
             };
 
             temp().Wait();
             Console.WriteLine("Done");
-        }
-
-        static async Task TestSendAsync(WebSocketManager manager, CancellationToken ct)
-        {
-            /* TODO: find open source version. This is intended as a temporary hack. there should be a library that does this. */
-            CommandLineParser parser = new CommandLineParser();
-
-            RegisterCommands(manager, parser, ct);
-
-            while (true)
-            {
-                Console.Write(">");
-                string input = Console.ReadLine();
-                if (input == "exit")
-                {
-                    break;
-                }
-
-                await parser.ParseCommand(input);
-            }
-            await manager.Close();
-
-        }
-
-        /// <summary>
-        ///     Registers the "getfile" command. when getfile is used, it will parse source and destination and ask the module for the given file.
-        /// </summary>
-        /// <param name="manager"></param>
-        /// <param name="parser"></param>
-        static void RegisterCommands(WebSocketManager manager, CommandLineParser parser, CancellationToken ct)
-        {
-            /* Register list file command */
-            parser.RegisterCommand("ls", async () =>
-            {
-                await manager.Send(Flag.ListFiles, ct);
-            });
-
-            /* Register get file */
-            string source = null;
-            Action<string> setSource = (string val) => source = val;
-
-            string destination = null;
-            Action<string> setDest = (string val) => destination = val;
-
-            Dictionary<string, Action<string>> args = new Dictionary<string, Action<string>>
-                        {
-                            {"--source", setSource },
-                            {"-s", setSource },
-                            {"--destination", setDest },
-                            {"-d", setDest }
-                        };
-
-            //getfile -s "testFile.txt" -d "C:\Users\Lee\Documents\Test\To\test.txt"
-            source = "New Text Document.txt";
-            destination = @"C:\Users\Lee\Documents\Test\To\testFile.txt";
-            parser.RegisterCommand("getfile", async () =>
-            {
-                if (destination == null)
-                {
-                    Console.WriteLine("Please use -d to set a destination");
-                    return;
-                }
-                if (source == null)
-                {
-                    Console.WriteLine("Please use -s to set a source");
-                    return;
-                }
-
-                await manager.Send(Flag.SendFile, Encoding.UTF8.GetBytes($"{source}|{destination}"), ct);
-                Console.WriteLine($"Requested {source} be saved to {destination}");
-            }, args);
         }
     }
 }

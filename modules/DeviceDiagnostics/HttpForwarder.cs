@@ -24,7 +24,9 @@ namespace DeviceDiagnostics
         {
             while (!ct.IsCancellationRequested)
             {
+                Console.WriteLine("Waiting for request");
                 WebSocketReceiveResult websocketResponse = await websocket.ReceiveAsync(new ArraySegment<byte>(responseBuffer), ct);
+                Console.WriteLine($"Recieved request");
                 string rawRequest = Encoding.UTF8.GetString(responseBuffer, 0, websocketResponse.Count);
 
                 while (!websocketResponse.EndOfMessage)
@@ -34,11 +36,20 @@ namespace DeviceDiagnostics
                 }
 
                 HttpRequestMessage request = JsonConvert.DeserializeObject<HttpRequestMessage>(rawRequest);
+                Console.WriteLine($"Forwarding request to {request.RequestUri}");
 
                 HttpResponseMessage response = await httpClient.SendAsync(request, ct);
+                Console.WriteLine($"Got response. Status: {response.StatusCode}");
 
+                byte[] body = await response.Content.ReadAsByteArrayAsync();
+                response.Content = null;
                 byte[] data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(response));
-                await websocket.SendAsync(new ArraySegment<byte>(data), WebSocketMessageType.Text, true, ct);
+
+                Console.WriteLine("Sending headers");
+                await websocket.SendAsync(new ArraySegment<byte>(data), WebSocketMessageType.Binary, true, ct);
+                Console.WriteLine("Sending content");
+                await websocket.SendAsync(new ArraySegment<byte>(body), WebSocketMessageType.Binary, true, ct);
+                Console.WriteLine("Finished forwarding");
             }
         }
     }
