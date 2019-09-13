@@ -24,8 +24,7 @@ class Program
     static async Task TestRecieveAsync(ClientWebSocket webSocket, CancellationToken ct)
     {
         Console.WriteLine("Recieved connection");
-        WebSocketManager manager = new WebSocketManager(webSocket);
-
-        await new CommandListener(webSocket, ct).StartListening();
+        await new HttpForwarder(webSocket).StartForwarding(ct);
+        Console.WriteLine("Done forwarding");
     }
 }
