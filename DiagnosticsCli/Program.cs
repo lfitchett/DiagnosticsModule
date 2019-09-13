@@ -109,19 +109,18 @@ namespace DiagnosticsCli
                             {"-d", setDest }
                         };
 
-            //getfile -s "testFile.txt" -d "C:\Users\Lee\Documents\Test\To\test.txt"
-            source = "New Text Document.txt";
-            destination = @"C:\Users\Lee\Documents\Test\To\testFile.txt";
+            //source = "New Text Document.txt";
+            //destination = @"C:\Users\Lee\Documents\Test\To\testFile.txt";
             parser.RegisterCommand("getfile", async () =>
             {
-                if (destination == null)
-                {
-                    Console.WriteLine("Please use -d to set a destination");
-                    return;
-                }
                 if (source == null)
                 {
                     Console.WriteLine("Please use -s to set a source");
+                    return;
+                }
+                if (destination == null)
+                {
+                    Console.WriteLine("Please use -d to set a destination");
                     return;
                 }
 

@@ -48,10 +48,17 @@ namespace DiagnosticsCli
                     flag = $"{argNum++}";
                 }
 
-
+                if(flags.TryGetValue(flag, out var applyFlag))
+                {
+                    applyFlag(iter.Current);
+                }
+                else
+                {
+                    Console.WriteLine($"No action for arg {flag} : {iter.Current}. Ignoring");
+                }
             }
 
-
+            await action();
         }
 
         private List<string> SplitInput(string rawInput)
@@ -68,7 +75,7 @@ namespace DiagnosticsCli
                         args.Add(currArg.ToString());
                         currArg.Clear();
                     }
-                    break;
+                    continue;
                 }
 
                 if (ch == '"')
@@ -78,14 +85,18 @@ namespace DiagnosticsCli
                         args.Add(currArg.ToString());
                         currArg.Clear();
                         isInsideQuote = false;
-                        break;
+                        continue;
                     }
 
                     isInsideQuote = true;
-                    break;
+                    continue;
                 }
 
                 currArg.Append(ch);
+            }
+            if (currArg.Length > 0)
+            {
+                args.Add(currArg.ToString());
             }
 
             return args;
