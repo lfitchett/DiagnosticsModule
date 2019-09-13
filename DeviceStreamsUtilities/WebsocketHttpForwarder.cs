@@ -7,15 +7,15 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace DeviceDiagnostics
+namespace DeviceStreamsUtilities
 {
-    public class HttpForwarder
+    public class WebsocketHttpForwarder
     {
         private readonly WebSocket websocket;
         private readonly byte[] responseBuffer = new byte[10240];
         private static readonly HttpClient httpClient = new HttpClient();
 
-        public HttpForwarder(WebSocket websocket)
+        public WebsocketHttpForwarder(WebSocket websocket)
         {
             this.websocket = websocket;
         }
@@ -26,6 +26,11 @@ namespace DeviceDiagnostics
             {
                 Console.WriteLine("Waiting for request");
                 WebSocketReceiveResult websocketResponse = await websocket.ReceiveAsync(new ArraySegment<byte>(responseBuffer), ct);
+                if(websocketResponse.MessageType == WebSocketMessageType.Close)
+                {
+                    break;
+                }
+
                 Console.WriteLine($"Recieved request");
                 string rawRequest = Encoding.UTF8.GetString(responseBuffer, 0, websocketResponse.Count);
 
