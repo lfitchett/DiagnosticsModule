@@ -18,10 +18,10 @@ class Program
         Console.WriteLine("Starting");
         DeviceClient client = DeviceClient.CreateFromConnectionString("HostName=lefitche-hub-3.azure-devices.net;DeviceId=device4;SharedAccessKey=NRjCGhamp4JCZiZzrwwJ/QZWbAsQ8qHa8B0BZSOFBZg=");
 
-        client.RegisterDeviceStreamCallback(TestRecieveAsync, CancellationToken.None).Wait();
+        client.RegisterDeviceStreamCallback(OnRecieve, CancellationToken.None).Wait();
     }
 
-    static async Task TestRecieveAsync(ClientWebSocket webSocket, CancellationToken ct)
+    static async Task OnRecieve(ClientWebSocket webSocket, CancellationToken ct)
     {
         Console.WriteLine("Recieved connection");
         await new WebsocketHttpForwarder(webSocket).StartForwarding(ct);
