@@ -1,29 +1,24 @@
-
-using System;
-using System.Collections;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.WebSockets;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using DeviceStreamsUtilities;
-using Microsoft.Azure.Devices.Client;
+using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
-class Program
+namespace DeviceDiagnostics
 {
-    static void Main(string[] args)
+    public class Program
     {
-        Console.WriteLine("Starting");
-        DeviceClient client = DeviceClient.CreateFromConnectionString("HostName=lefitche-hub-3.azure-devices.net;DeviceId=device4;SharedAccessKey=NRjCGhamp4JCZiZzrwwJ/QZWbAsQ8qHa8B0BZSOFBZg=");
+        public static void Main(string[] args)
+        {
+            CreateWebHostBuilder(args).Build().Run();
+        }
 
-        client.RegisterDeviceStreamCallback(OnRecieve, CancellationToken.None).Wait();
-    }
-
-    static async Task OnRecieve(ClientWebSocket webSocket, CancellationToken ct)
-    {
-        Console.WriteLine("Recieved connection");
-        await new WebsocketHttpForwarder(webSocket).StartForwarding(ct);
-        Console.WriteLine("Done forwarding");
+        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
+            WebHost.CreateDefaultBuilder(args)
+                .UseStartup<Startup>();
     }
 }
