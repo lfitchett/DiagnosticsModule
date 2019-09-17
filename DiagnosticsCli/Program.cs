@@ -33,10 +33,13 @@ namespace DiagnosticsCli
                 using (ClientWebSocket webSocket = await client.ConnectToDevice(deviceId, ct))
                 using (HttpClient httpClient = new HttpClient(new WebsocketHttpMessageHandler(webSocket)))
                 {
-                    var response = await httpClient.GetAsync(@"http://localhost:5000/api/values");
-                    var body = await response.Content.ReadAsStringAsync();
+                    var response = await httpClient.GetAsync(@"http://localhost:5000/api/file?filename=C%3A%5CUsers%5CLee%5CDocuments%5CTest%5CFrom%5CNew+Text+Document.txt");
                     Console.WriteLine(response);
-                    Console.WriteLine(body);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var body = await response.Content.ReadAsStringAsync();
+                        Console.WriteLine(body);
+                    }
 
                     await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Normal close", CancellationToken.None);
                 }

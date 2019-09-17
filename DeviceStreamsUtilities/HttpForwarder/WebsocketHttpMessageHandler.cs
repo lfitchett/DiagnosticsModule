@@ -36,6 +36,13 @@ namespace DeviceStreamsUtilities
                 rawResponse += Encoding.UTF8.GetString(responseBuffer, 0, websocketResponse.Count);
             }
 
+            /* reconstruct response */
+            HttpResponseMessage response = JsonConvert.DeserializeObject<HttpResponseMessage>(rawResponse);
+            if (!response.IsSuccessStatusCode)
+            {
+                return response;
+            }
+
             /* recieve body */
             websocketResponse = await websocket.ReceiveAsync(new ArraySegment<byte>(responseBuffer), cancellationToken);
             List<byte> rawBody = new List<byte>();
@@ -47,8 +54,7 @@ namespace DeviceStreamsUtilities
                 rawBody.AddRange(responseBuffer.Take(websocketResponse.Count));
             }
 
-            /* reconstruct response */
-            HttpResponseMessage response = JsonConvert.DeserializeObject<HttpResponseMessage>(rawResponse);
+            
             response.Content = new ByteArrayContent(rawBody.ToArray());
 
             return response;

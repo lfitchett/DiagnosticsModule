@@ -52,6 +52,11 @@ namespace DeviceStreamsUtilities
 
                 Console.WriteLine("Sending headers");
                 await websocket.SendAsync(new ArraySegment<byte>(data), WebSocketMessageType.Binary, true, ct);
+                if (!response.IsSuccessStatusCode)
+                {
+                    continue;
+                }
+
                 Console.WriteLine("Sending content");
                 await websocket.SendAsync(new ArraySegment<byte>(body), WebSocketMessageType.Binary, true, ct);
                 Console.WriteLine("Finished forwarding");

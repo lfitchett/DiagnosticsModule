@@ -8,13 +8,14 @@ namespace DeviceDiagnostics.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ValuesController : ControllerBase
+    public class FileController : ControllerBase
     {
-        // GET api/values
+        // GET api/file?filename=
         [HttpGet]
-        public ActionResult Get()
+        public ActionResult Get([FromQuery] string filename)
         {
-            var temp = System.IO.File.OpenRead(@"C:\Users\Lee\Documents\Test\From\New Text Document.txt");
+            Console.WriteLine($"Sending file {filename}");
+            var temp = System.IO.File.OpenRead(filename);
             return File(temp, System.Net.Mime.MediaTypeNames.Application.Octet);
         }
     }
