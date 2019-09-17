@@ -19,60 +19,43 @@ namespace DiagnosticsCli
     {
         static void Main(string[] args)
         {
-            Func<Task> temp = async () =>
-            {
-                CancellationTokenSource cancelSource = new CancellationTokenSource();
-                CancellationToken ct = cancelSource.Token;
-
-                string deviceId = "device4";
-                string connString = "HostName=lefitche-hub-3.azure-devices.net;SharedAccessKeyName=service;SharedAccessKey=s+3pkFuO8O4leS3mIFl1aW6O0/ASKEo85Cv0mjgrDUg=";
-
-
-
-                ServiceClient client = ServiceClient.CreateFromConnectionString(connString);
-                using (ClientWebSocket webSocket = await client.ConnectToDevice(deviceId, ct))
-                using (HttpClient httpClient = new HttpClient(new WebsocketHttpMessageHandler(webSocket)))
-                {
-                    // @"http://localhost:5000/api/file?filename=C%3A%5CUsers%5CLee%5CDocuments%5CTest%5CFrom%5CNew+Text+Document.txt"
-                    var response = await httpClient.GetAsync(@"http://localhost:80/api/file/list");
-                    Console.WriteLine(response);
-                    if (response.IsSuccessStatusCode)
-                    {
-                        using (FileStream file = File.OpenWrite(@"C:\Users\Lee\Documents\Test\To\test.txt"))
-                        {
-                            (await response.Content.ReadAsStreamAsync()).CopyTo(file);
-                        }
-                    }
-
-                    await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Normal close", CancellationToken.None);
-                }
-
-            };
-
-            temp().Wait();
+            AsyncMain().Wait();
             Console.WriteLine("Done");
         }
 
-        static async Task TestSendAsync(WebSocketManager manager, CancellationToken ct)
+        static async Task AsyncMain()
         {
-            /* TODO: find open source version. This is intended as a temporary hack. there should be a library that does this. */
-            CommandLineParser parser = new CommandLineParser();
+            CancellationTokenSource cancelSource = new CancellationTokenSource();
+            CancellationToken ct = cancelSource.Token;
 
-            RegisterCommands(manager, parser, ct);
+            string deviceId = "device4";
+            string connString = "HostName=lefitche-hub-3.azure-devices.net;SharedAccessKeyName=service;SharedAccessKey=s+3pkFuO8O4leS3mIFl1aW6O0/ASKEo85Cv0mjgrDUg=";
 
-            while (true)
+
+
+            ServiceClient client = ServiceClient.CreateFromConnectionString(connString);
+            using (ClientWebSocket webSocket = await client.ConnectToDevice(deviceId, ct))
+            using (HttpClient httpClient = new HttpClient(new WebsocketHttpMessageHandler(webSocket)))
             {
-                Console.Write(">");
-                string input = Console.ReadLine();
-                if (input == "exit")
+                /* TODO: find open source version. This is intended as a temporary hack. there should be a library that does this. */
+                CommandLineParser parser = new CommandLineParser();
+
+                RegisterCommands(httpClient, parser, ct);
+
+                while (true)
                 {
-                    break;
+                    Console.Write(">");
+                    string input = Console.ReadLine();
+                    if (input == "exit")
+                    {
+                        break;
+                    }
+
+                    await parser.ParseCommand(input);
                 }
 
-                await parser.ParseCommand(input);
+                await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Normal close", CancellationToken.None);
             }
-            await manager.Close();
-
         }
 
         /// <summary>
@@ -80,12 +63,16 @@ namespace DiagnosticsCli
         /// </summary>
         /// <param name="manager"></param>
         /// <param name="parser"></param>
-        static void RegisterCommands(WebSocketManager manager, CommandLineParser parser, CancellationToken ct)
+        static void RegisterCommands(HttpClient httpClient, CommandLineParser parser, CancellationToken ct)
         {
             /* Register list file command */
             parser.RegisterCommand("ls", async () =>
             {
-                await manager.Send(Flag.ListFiles, ct);
+                HttpResponseMessage response = await httpClient.GetAsync(@"http://localhost:80/api/file/list", ct);
+                if (response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine(await response.Content.ReadAsStringAsync());
+                }
             });
 
             /* Register get file */
@@ -118,8 +105,18 @@ namespace DiagnosticsCli
                     return;
                 }
 
-                await manager.Send(Flag.SendFile, Encoding.UTF8.GetBytes($"{source}|{destination}"), ct);
-                Console.WriteLine($"Requested {source} be saved to {destination}");
+                UriBuilder uri = new UriBuilder(@"http://localhost:80/api/file");
+                uri.Query = Uri.EscapeUriString(source);
+                HttpResponseMessage response = await httpClient.GetAsync(uri.Uri, ct);
+
+                Console.WriteLine(response);
+                if (response.IsSuccessStatusCode)
+                {
+                    using (FileStream file = File.OpenWrite($@"C:\Users\Lee\Documents\Test\To\{destination}"))
+                    {
+                        (await response.Content.ReadAsStreamAsync()).CopyTo(file);
+                    }
+                }
             }, args);
         }
     }
