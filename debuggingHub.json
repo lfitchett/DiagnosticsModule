@@ -1,0 +1,95 @@
+{
+    "$schema-template": "2.0.0",
+    "modulesContent": {
+      "$edgeAgent": {
+        "properties.desired": {
+          "schemaVersion": "1.0",
+          "runtime": {
+            "type": "docker",
+            "settings": {
+              "minDockerVersion": "v1.25",
+              "loggingOptions": "",
+              "registryCredentials": {
+                "lefitchereg": {
+                  "username": "$CONTAINER_REGISTRY_USERNAME_lefitchereg1",
+                  "password": "$CONTAINER_REGISTRY_PASSWORD_lefitchereg1",
+                  "address": "lefitchereg1.azurecr.io"
+                }
+              }
+            }
+          },
+          "systemModules": {
+            "edgeAgent": {
+              "type": "docker",
+              "settings": {
+                "image": "mcr.microsoft.com/azureiotedge-agent:1.0",
+                "createOptions": {}
+              }
+            },
+            "edgeHub": {
+              "type": "docker",
+              "status": "running",
+              "restartPolicy": "always",
+              "settings": {
+                "image": "lefitchereg1.azurecr.io/edge_hub_test:0.0.45-amd64",
+                "createOptions": {
+                  "HostConfig": {
+                    "PortBindings": {
+                      "5671/tcp": [
+                        {
+                          "HostPort": "5671"
+                        }
+                      ],
+                      "8883/tcp": [
+                        {
+                          "HostPort": "8883"
+                        }
+                      ],
+                      "443/tcp": [
+                        {
+                          "HostPort": "443"
+                        }
+                      ]
+                    },
+                    "Binds": [
+                      "/home/lee/dumps:/app/dumps"
+                    ]
+                  },
+                  "Env": [
+                    "metrics__enabled=true",
+                    "COMPlus_DbgEnableMiniDump=1",
+                    "COMPlus_DbgMiniDumpType=1",
+                    "COMPlus_CreateDumpDiagnostics=1",
+                    "COMPlus_DbgMiniDumpName=/app/dumps/dump_edgeHub"
+                  ]
+                }
+              }
+            }
+          },
+          "modules": {
+            "tempSensor": {
+              "version": "1.0",
+              "type": "docker",
+              "status": "running",
+              "restartPolicy": "always",
+              "settings": {
+                "image": "mcr.microsoft.com/azureiotedge-simulated-temperature-sensor:1.0",
+                "createOptions": {}
+              }
+            }
+          }
+        }
+      },
+      "$edgeHub": {
+        "properties.desired": {
+          "schemaVersion": "1.0",
+          "routes": {
+            "sensorToHub": "FROM /messages/modules/tempSensor/outputs/temperatureOutput INTO $upstream)"
+          },
+          "storeAndForwardConfiguration": {
+            "timeToLiveSecs": 7200
+          }
+        }
+      }
+    }
+  }
