@@ -20,6 +20,7 @@ namespace DeviceDiagnostics
             Console.WriteLine("Starting");
             DeviceClient client = DeviceClient.CreateFromConnectionString("HostName=lefitche-hub-3.azure-devices.net;DeviceId=device4;SharedAccessKey=NRjCGhamp4JCZiZzrwwJ/QZWbAsQ8qHa8B0BZSOFBZg=");
 
+            CancellationTokenSource ctSource = new CancellationTokenSource();
 
             Task.WhenAny(
                 client.RegisterDeviceStreamCallback(async (webSocket, ct) =>
@@ -27,9 +28,14 @@ namespace DeviceDiagnostics
                         Console.WriteLine("Recieved connection");
                         await new WebsocketHttpForwarder(webSocket).StartForwarding(ct);
                         Console.WriteLine("Done forwarding");
-                    }, CancellationToken.None),
-                Task.Run(CreateWebHostBuilder(args).Build().Run)
+                    }, ctSource.Token),
+                Task.Run(CreateWebHostBuilder(args).Build().Run, ctSource.Token)
             ).Wait();
+
+            Console.WriteLine("Shutting down");
+            ctSource.Cancel();
+            Thread.Sleep(5000);
+
         }
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>

@@ -25,5 +25,12 @@ namespace DeviceDiagnostics.Controllers
         {
             return string.Join('\n', Directory.GetFiles(directory));
         }
+
+        [Route("test")]
+        public ActionResult<string> Test()
+        {
+            Console.WriteLine(Directory.GetCurrentDirectory());
+            return Directory.GetCurrentDirectory();
+        }
     }
 }

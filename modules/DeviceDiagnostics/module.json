@@ -4,7 +4,7 @@
     "image": {
         "repository": "lefitchereg1.azurecr.io/devicediagnostics",
         "tag": {
-            "version": "0.0.10",
+            "version": "0.0.17",
             "platforms": {
                 "amd64": "./Dockerfile.amd64", 
                 "amd64.debug": "./Dockerfile.amd64.debug",
