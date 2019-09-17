@@ -1,10 +1,12 @@
 ﻿using DeviceStreamsUtilities;
 using Microsoft.Azure.Amqp.Framing;
 using Microsoft.Azure.Devices;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Net.WebSockets;
 using System.Security.Cryptography;
 using System.Text;
@@ -29,28 +31,20 @@ namespace DiagnosticsCli
 
                 ServiceClient client = ServiceClient.CreateFromConnectionString(connString);
                 using (ClientWebSocket webSocket = await client.ConnectToDevice(deviceId, ct))
+                using (HttpClient httpClient = new HttpClient(new WebsocketHttpMessageHandler(webSocket)))
                 {
-                    WebSocketManager manager = new WebSocketManager(webSocket);
-
-                    manager.RegisterCallback(Flag.Response, async (ArraySegment<byte> data, CancellationToken _) =>
+                    // @"http://localhost:5000/api/file?filename=C%3A%5CUsers%5CLee%5CDocuments%5CTest%5CFrom%5CNew+Text+Document.txt"
+                    var response = await httpClient.GetAsync(@"http://localhost:80/api/file/list");
+                    Console.WriteLine(response);
+                    if (response.IsSuccessStatusCode)
                     {
-                        Console.WriteLine(Encoding.UTF8.GetString(data));
-                    }, CancellationToken.None);
-
-                    manager.RegisterCallback(Flag.SendFile, async (ArraySegment<byte> data, CancellationToken _) =>
-                    {
-                        byte[] file = data.ToArray();
-
-                        try
+                        using (FileStream file = File.OpenWrite(@"C:\Users\Lee\Documents\Test\To\test.txt"))
                         {
-                            File.WriteAllBytes(@"C:\Users\Lee\Documents\Test\To\testFile.txt", file);
+                            (await response.Content.ReadAsStreamAsync()).CopyTo(file);
                         }
-                        catch (Exception ex)
-                        {
-                            throw ex;
-                        }
-                    }, CancellationToken.None);
-                    await Task.WhenAll(manager.StartRecieving(ct), TestSendAsync(manager, ct));
+                    }
+
+                    await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Normal close", CancellationToken.None);
                 }
 
             };

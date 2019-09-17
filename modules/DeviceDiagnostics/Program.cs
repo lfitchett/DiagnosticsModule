@@ -1,31 +1,45 @@
-
-using System;
-using System.Collections;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.WebSockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using DeviceDiagnostics;
-using DeviceStreamsUtilities;
+using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Azure.Devices.Client;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using DeviceStreamsUtilities;
 
-class Program
+namespace DeviceDiagnostics
 {
-    static void Main(string[] args)
+    public class Program
     {
-        Console.WriteLine("Starting");
-        DeviceClient client = DeviceClient.CreateFromConnectionString("HostName=lefitche-hub-3.azure-devices.net;DeviceId=device4;SharedAccessKey=NRjCGhamp4JCZiZzrwwJ/QZWbAsQ8qHa8B0BZSOFBZg=");
+        public static void Main(string[] args)
+        {
+            Console.WriteLine("Starting");
+            DeviceClient client = DeviceClient.CreateFromConnectionString("HostName=lefitche-hub-3.azure-devices.net;DeviceId=device4;SharedAccessKey=NRjCGhamp4JCZiZzrwwJ/QZWbAsQ8qHa8B0BZSOFBZg=");
 
-        client.RegisterDeviceStreamCallback(TestRecieveAsync, CancellationToken.None).Wait();
-    }
+            CancellationTokenSource ctSource = new CancellationTokenSource();
 
-    static async Task TestRecieveAsync(ClientWebSocket webSocket, CancellationToken ct)
-    {
-        Console.WriteLine("Recieved connection");
-        WebSocketManager manager = new WebSocketManager(webSocket);
+            Task.WhenAny(
+                client.RegisterDeviceStreamCallback(async (webSocket, ct) =>
+                    {
+                        Console.WriteLine("Recieved connection");
+                        await new WebsocketHttpForwarder(webSocket).StartForwarding(ct);
+                        Console.WriteLine("Done forwarding");
+                    }, ctSource.Token),
+                Task.Run(CreateWebHostBuilder(args).Build().Run, ctSource.Token)
+            ).Wait();
 
-        await new CommandListener(webSocket, ct).StartListening();
+            Console.WriteLine("Shutting down");
+            ctSource.Cancel();
+            Thread.Sleep(5000);
+
+        }
+
+        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
+            WebHost.CreateDefaultBuilder(args)
+                .UseStartup<Startup>();
     }
 }
