@@ -33,7 +33,7 @@ namespace DiagnosticsCli
                 using (ClientWebSocket webSocket = await client.ConnectToDevice(deviceId, ct))
                 using (HttpClient httpClient = new HttpClient(new WebsocketHttpMessageHandler(webSocket)))
                 {
-                    var response = await httpClient.GetAsync(@"https://www.google.com/search?q=test");
+                    var response = await httpClient.GetAsync(@"http://localhost:5000/api/values");
                     var body = await response.Content.ReadAsStringAsync();
                     Console.WriteLine(response);
                     Console.WriteLine(body);
