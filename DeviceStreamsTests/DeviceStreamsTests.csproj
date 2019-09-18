@@ -16,4 +16,16 @@
     <ProjectReference Include="..\DeviceStreamsUtilities\DeviceStreamsUtilities.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="Microsoft.Azure.Devices.Edge.Test.Common">
+      <HintPath>Microsoft.Azure.Devices.Edge.Test.Common.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="context.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
