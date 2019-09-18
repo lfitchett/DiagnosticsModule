@@ -8,30 +8,20 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Net.Http.Headers;
 using System;
-using IotHubConnectionStringBuilder = Microsoft.Azure.Devices.Client.IotHubConnectionStringBuilder;
+using DeviceStreamsTests;
 
 namespace Websockets
 {
-    public class WebsocketFactory
+    public class WebsocketFactory : Setup
     {
         string deviceId;
         DeviceClient deviceClient;
-        ServiceClient serviceClient;
-        Func<Task<Device>> makeNewDevice;
-
-        [OneTimeSetUp]
-        public void Init()
-        {
-            string hubConnString = "HostName=lefitche-hub-3.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=wyT/feMmLKDj8wnWxLCHkQERmOUBWaeuLMDLDjAILug=";
-
-            var manager = RegistryManager.CreateFromConnectionString(hubConnString);
-            makeNewDevice = () => manager.AddDeviceAsync(new Device($"TestDevice{Guid.NewGuid().ToString()}"));
-        }
+        ServiceClient serviceClient;        
 
         [SetUp]
         public async Task Setup()
         {
-            var device = await makeNewDevice();
+            var device = await MakeNewDevice();
             deviceId = device.Id;            
 
             string deviceConnString = $"HostName=lefitche-hub-3.azure-devices.net;DeviceId={device.Id};SharedAccessKey={device.Authentication.SymmetricKey.PrimaryKey}";
