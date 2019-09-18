@@ -17,20 +17,25 @@ namespace Websockets
         string deviceId;
         DeviceClient deviceClient;
         ServiceClient serviceClient;
+        Func<Task<Device>> makeNewDevice;
+
+        [OneTimeSetUp]
+        public void Init()
+        {
+            string hubConnString = "HostName=lefitche-hub-3.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=wyT/feMmLKDj8wnWxLCHkQERmOUBWaeuLMDLDjAILug=";
+
+            var manager = RegistryManager.CreateFromConnectionString(hubConnString);
+            makeNewDevice = () => manager.AddDeviceAsync(new Device($"TestDevice{Guid.NewGuid().ToString()}"));
+        }
 
         [SetUp]
         public async Task Setup()
         {
-            deviceId = $"TestDevice{Guid.NewGuid().ToString()}";
-            string hubConnString = "HostName=lefitche-hub-3.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=wyT/feMmLKDj8wnWxLCHkQERmOUBWaeuLMDLDjAILug=";
+            var device = await makeNewDevice();
+            deviceId = device.Id;            
 
-            var manager = RegistryManager.CreateFromConnectionString(hubConnString);
-            var device = await manager.AddDeviceAsync(new Device(deviceId));
-
-            //string deviceConnString = $"HostName=lefitche-hub-3.azure-devices.net;DeviceId={device.Id};SharedAccessKey={device.Authentication.SymmetricKey.PrimaryKey}";
-            //manager.get
-            var auth = new DeviceAuthenticationWithSharedAccessPolicyKey(device.Id, "SharedAccessKey", device.Authentication.SymmetricKey.PrimaryKey);
-            deviceClient = DeviceClient.Create("lefitche-hub-3.azure-devices.net", auth);
+            string deviceConnString = $"HostName=lefitche-hub-3.azure-devices.net;DeviceId={device.Id};SharedAccessKey={device.Authentication.SymmetricKey.PrimaryKey}";
+            deviceClient = DeviceClient.CreateFromConnectionString(deviceConnString);
 
             serviceClient = ServiceClient.CreateFromConnectionString("HostName=lefitche-hub-3.azure-devices.net;SharedAccessKeyName=service;SharedAccessKey=s+3pkFuO8O4leS3mIFl1aW6O0/ASKEo85Cv0mjgrDUg=");
         }
