@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace DeviceStreamsTests.Setup
 {
-    public class SetupWebsocket : SetupBase
+    public class SetupClients : SetupBase
     {
         protected string deviceId;
         protected DeviceClient deviceClient;

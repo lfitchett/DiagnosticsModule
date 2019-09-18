@@ -13,7 +13,7 @@ using DeviceStreamsTests.Setup;
 
 namespace Websockets
 {
-    public class WebsocketFactory : SetupWebsocket
+    public class WebsocketFactory : SetupClients
     {       
         [Test]
         public async Task InitiateConnection()
