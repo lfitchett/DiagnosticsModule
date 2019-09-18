@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.FileProviders;
 
 namespace DeviceDiagnostics.Controllers
 {
@@ -11,13 +12,19 @@ namespace DeviceDiagnostics.Controllers
     [ApiController]
     public class FileController : ControllerBase
     {
+        public const string SHARED_DIRECTORY = @"C:\Users\Lee\Documents\Test\From";
+
+        public FileController()
+        {
+            Directory.SetCurrentDirectory(SHARED_DIRECTORY);
+        }
+
         // GET api/file?filename=
         [HttpGet]
-        public IActionResult Get([FromQuery] string filename)
+        public FileResult Get([FromQuery] string filename, [FromServices] IFileProvider fileProvider)
         {
             Console.WriteLine($"Sending file {filename}");
-            var temp = System.IO.File.OpenRead(filename);
-            return File(temp, System.Net.Mime.MediaTypeNames.Application.Octet);
+            return File(fileProvider.GetFileInfo(filename).CreateReadStream(), System.Net.Mime.MediaTypeNames.Application.Octet);
         }
 
         [Route("list")]
