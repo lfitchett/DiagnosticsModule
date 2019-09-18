@@ -42,7 +42,7 @@
             "status": "running",
             "restartPolicy": "always",
             "settings": {
-              "image": "lefitchereg1.azurecr.io/devicediagnostics:0.0.26-amd64",
+              "image": "lefitchereg1.azurecr.io/devicediagnostics:0.0.28-amd64",
               "createOptions": "{\"HostConfig\":{\"PortBindings\":{\"5000/tcp\":[{\"HostPort\":\"5000\"}]},\"Binds\":[\"/shared:/app/shared\"]}}"
             }
           }

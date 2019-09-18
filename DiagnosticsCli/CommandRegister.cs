@@ -22,10 +22,7 @@ namespace DiagnosticsCli
             parser.RegisterCommand("ls", async () =>
             {
                 HttpResponseMessage response = await httpClient.GetAsync(@"http://localhost:80/api/file/list", ct);
-                if (response.IsSuccessStatusCode)
-                {
-                    Console.WriteLine(await response.Content.ReadAsStringAsync());
-                }
+                Console.WriteLine(await response.Content.ReadAsStringAsync());
             });
 
             /* Register get file */
@@ -65,7 +62,7 @@ namespace DiagnosticsCli
                 {
                     using (FileStream file = File.OpenWrite($@"C:\Users\Lee\Documents\Test\To\{destination}"))
                     {
-                        (await response.Content.ReadAsStreamAsync()).CopyTo(file);
+                        await (await response.Content.ReadAsStreamAsync()).CopyToAsync(file);
                     }
                 }
             }, args);

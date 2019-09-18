@@ -1,6 +1,9 @@
-﻿using Newtonsoft.Json;
+﻿using DeviceStreamsUtilities.HttpForwarder;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net.WebSockets;
 using System.Text;
@@ -12,7 +15,7 @@ namespace DeviceStreamsUtilities
     public class WebsocketHttpForwarder
     {
         private readonly WebSocket websocket;
-        private readonly byte[] responseBuffer = new byte[10240];
+        private readonly byte[] responseBuffer = new byte[WebsocketHttpShared.BUFFER_SIZE];
         private static readonly HttpClient httpClient = new HttpClient();
 
         public WebsocketHttpForwarder(WebSocket websocket)
@@ -26,7 +29,7 @@ namespace DeviceStreamsUtilities
             {
                 Console.WriteLine("Waiting for request");
                 WebSocketReceiveResult websocketResponse = await websocket.ReceiveAsync(new ArraySegment<byte>(responseBuffer), ct);
-                if(websocketResponse.MessageType == WebSocketMessageType.Close)
+                if (websocketResponse.MessageType == WebSocketMessageType.Close)
                 {
                     break;
                 }
@@ -46,19 +49,40 @@ namespace DeviceStreamsUtilities
                 HttpResponseMessage response = await httpClient.SendAsync(request, ct);
                 Console.WriteLine($"Got response. Status: {response.StatusCode}");
 
-                byte[] body = await response.Content.ReadAsByteArrayAsync();
+                HttpContent content = response.Content;
                 response.Content = null;
-                byte[] data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(response));
 
                 Console.WriteLine("Sending headers");
-                await websocket.SendAsync(new ArraySegment<byte>(data), WebSocketMessageType.Binary, true, ct);
-                if (!response.IsSuccessStatusCode)
-                {
-                    continue;
-                }
+                byte[] responseBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(response));
+                await websocket.SendAsync(new ArraySegment<byte>(responseBytes), WebSocketMessageType.Binary, true, ct);
 
                 Console.WriteLine("Sending content");
-                await websocket.SendAsync(new ArraySegment<byte>(body), WebSocketMessageType.Binary, true, ct);
+                string contentSerialized = JsonConvert.SerializeObject(content.Headers.AsEnumerable().ToArray());
+                Console.WriteLine(contentSerialized);
+                byte[] contentBytes = Encoding.UTF8.GetBytes(contentSerialized);
+                await websocket.SendAsync(new ArraySegment<byte>(contentBytes), WebSocketMessageType.Binary, true, ct);
+                if (content.Headers.Contains("Content-Length"))
+                {
+                    int length = int.Parse(content.Headers.GetValues("Content-Length").First());
+
+                    Stream stream = await content.ReadAsStreamAsync();
+                    while (stream.Position < stream.Length)
+                    {
+                        int numToSend = stream.Read(responseBuffer, 0, responseBuffer.Length);
+                        await websocket.SendAsync(new ArraySegment<byte>(responseBuffer, 0, numToSend), WebSocketMessageType.Binary, true, ct);
+                    }
+                }
+                else
+                {
+                    byte[] body = await content.ReadAsByteArrayAsync();
+                    if(body.Length == 0)
+                    {
+                        body = Encoding.UTF8.GetBytes("No Content");
+                    }
+
+                    await websocket.SendAsync(new ArraySegment<byte>(body), WebSocketMessageType.Binary, true, ct);
+                }
+
                 Console.WriteLine("Finished forwarding");
             }
         }
