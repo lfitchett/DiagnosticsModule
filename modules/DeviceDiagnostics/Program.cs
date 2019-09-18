@@ -13,33 +13,38 @@ using DeviceStreamsUtilities;
 
 namespace DeviceDiagnostics
 {
-    public class Program
+    public class Diagnostics
     {
         public static void Main(string[] args)
         {
             Console.WriteLine("Starting");
-            DeviceClient client = DeviceClient.CreateFromConnectionString("HostName=lefitche-hub-3.azure-devices.net;DeviceId=device4;SharedAccessKey=NRjCGhamp4JCZiZzrwwJ/QZWbAsQ8qHa8B0BZSOFBZg=");
-
             CancellationTokenSource ctSource = new CancellationTokenSource();
 
             Task.WhenAny(
-                client.RegisterDeviceStreamCallback(async (webSocket, ct) =>
-                    {
-                        Console.WriteLine("Recieved connection");
-                        await new WebsocketHttpForwarder(webSocket).StartForwarding(ct);
-                        Console.WriteLine("Done forwarding");
-                    }, ctSource.Token),
-                Task.Run(CreateWebHostBuilder(args).Build().Run, ctSource.Token)
+                RunForwarder(args, ctSource.Token),
+                RunWebserver(args, ctSource.Token)
             ).Wait();
 
             Console.WriteLine("Shutting down");
             ctSource.Cancel();
             Thread.Sleep(5000);
-
         }
 
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
-            WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>();
+        public static async Task RunForwarder(string[] args, CancellationToken ct)
+        {
+            DeviceClient client = DeviceClient.CreateFromConnectionString("HostName=lefitche-hub-3.azure-devices.net;DeviceId=device4;SharedAccessKey=NRjCGhamp4JCZiZzrwwJ/QZWbAsQ8qHa8B0BZSOFBZg=");
+
+            await client.RegisterDeviceStreamCallback(async (webSocket, ct_func) =>
+            {
+                Console.WriteLine("Recieved connection");
+                await new WebsocketHttpForwarder(webSocket).StartForwarding(ct_func);
+                Console.WriteLine("Done forwarding");
+            }, ct);
+        }
+
+        public static Task RunWebserver(string[] args, CancellationToken ct)
+        {
+            return Task.Run(WebHost.CreateDefaultBuilder(args).UseStartup<Startup>().Build().Run, ct);
+        }
     }
 }
