@@ -7,6 +7,8 @@ using DeviceStreamsUtilities;
 using System.Net.WebSockets;
 using System.Text;
 using System.Net.Http.Headers;
+using System;
+using IotHubConnectionStringBuilder = Microsoft.Azure.Devices.Client.IotHubConnectionStringBuilder;
 
 namespace Websockets
 {
@@ -17,10 +19,18 @@ namespace Websockets
         ServiceClient serviceClient;
 
         [SetUp]
-        public void Setup()
+        public async Task Setup()
         {
-            deviceId = "TestDevice1";
-            deviceClient = DeviceClient.CreateFromConnectionString("HostName=lefitche-hub-3.azure-devices.net;DeviceId=TestDevice1;SharedAccessKey=JqUO2wJDKvQng358DOYapSYSmw8l4T3RKnrfl0N/p3I=");
+            deviceId = $"TestDevice{Guid.NewGuid().ToString()}";
+            string hubConnString = "HostName=lefitche-hub-3.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=wyT/feMmLKDj8wnWxLCHkQERmOUBWaeuLMDLDjAILug=";
+
+            var manager = RegistryManager.CreateFromConnectionString(hubConnString);
+            var device = await manager.AddDeviceAsync(new Device(deviceId));
+
+            //string deviceConnString = $"HostName=lefitche-hub-3.azure-devices.net;DeviceId={device.Id};SharedAccessKey={device.Authentication.SymmetricKey.PrimaryKey}";
+            //manager.get
+            var auth = new DeviceAuthenticationWithSharedAccessPolicyKey(device.Id, "SharedAccessKey", device.Authentication.SymmetricKey.PrimaryKey);
+            deviceClient = DeviceClient.Create("lefitche-hub-3.azure-devices.net", auth);
 
             serviceClient = ServiceClient.CreateFromConnectionString("HostName=lefitche-hub-3.azure-devices.net;SharedAccessKeyName=service;SharedAccessKey=s+3pkFuO8O4leS3mIFl1aW6O0/ASKEo85Cv0mjgrDUg=");
         }
@@ -79,7 +89,7 @@ namespace Websockets
                 Task.Run(async () =>
                 {
                     await Task.Delay(100);
-                    WebSocket webSocket = await serviceClient.ConnectToDevice("TestDevice1", callbackCancel.Token);
+                    WebSocket webSocket = await serviceClient.ConnectToDevice(deviceId, callbackCancel.Token);
 
                     await webSocket.SendAsync(Encoding.UTF8.GetBytes(data), WebSocketMessageType.Binary, true, callbackCancel.Token);
                 })
