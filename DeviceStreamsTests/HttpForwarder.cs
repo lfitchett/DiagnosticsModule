@@ -11,12 +11,26 @@ using System;
 using DeviceStreamsTests;
 using DeviceStreamsTests.Setup;
 using System.Net.Http;
+using Microsoft.AspNetCore.Http;
 
 namespace Websockets
 {
-    public class HttpForwarder : SetupClients
+    public class HttpForwarder : SetupWebserver
     {
         [Test]
+        public async Task TestServer()
+        {
+            using (HttpClient httpClient = new HttpClient())
+            {
+                HttpResponseMessage response = await httpClient.GetAsync(@"http://localhost:5000/api/file/list");
+                Assert.True(response.IsSuccessStatusCode, "Expected Get to succeed");
+
+                string body = await response.Content.ReadAsStringAsync();
+                Assert.IsNotEmpty(body);
+            }
+        }
+
+        //[Test]
         public async Task test1()
         {
             bool connected = false;
@@ -30,7 +44,7 @@ namespace Websockets
                 using (ClientWebSocket webSocket = await serviceClient.ConnectToDevice(deviceId, callbackCancel.Token))
                 using (HttpClient httpClient = new HttpClient(new WebsocketHttpMessageHandler(webSocket)))
                 {
-                    
+
 
 
                     await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Normal close", CancellationToken.None);

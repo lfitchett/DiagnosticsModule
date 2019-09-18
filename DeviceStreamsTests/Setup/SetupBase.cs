@@ -24,6 +24,7 @@ namespace DeviceStreamsTests.Setup
         public async Task RemoveDevices()
         {
             await registryManager.RemoveDevices2Async(addedDevices);
+            registryManager.Dispose();
         }
 
         protected async Task<Device> MakeNewDevice()

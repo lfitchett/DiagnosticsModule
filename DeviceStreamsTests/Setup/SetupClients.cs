@@ -15,7 +15,7 @@ namespace DeviceStreamsTests.Setup
         protected ServiceClient serviceClient;
 
         [SetUp]
-        public async Task Setup()
+        public async Task ClientSetup()
         {
             var device = await MakeNewDevice();
             deviceId = device.Id;
@@ -25,5 +25,13 @@ namespace DeviceStreamsTests.Setup
 
             serviceClient = ServiceClient.CreateFromConnectionString("HostName=lefitche-hub-3.azure-devices.net;SharedAccessKeyName=service;SharedAccessKey=s+3pkFuO8O4leS3mIFl1aW6O0/ASKEo85Cv0mjgrDUg=");
         }
+
+        [TearDown]
+        public void ClientTeardown()
+        {
+            deviceClient.Dispose();
+            serviceClient.Dispose();
+        }
+
     }
 }
