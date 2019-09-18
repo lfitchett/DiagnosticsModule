@@ -5,9 +5,9 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DeviceStreamsTests
+namespace DeviceStreamsTests.Setup
 {
-    public class Setup
+    public class SetupBase
     {
         private RegistryManager registryManager;
         private List<Device> addedDevices = new List<Device>();

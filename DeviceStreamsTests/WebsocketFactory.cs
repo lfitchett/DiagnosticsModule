@@ -9,27 +9,12 @@ using System.Text;
 using System.Net.Http.Headers;
 using System;
 using DeviceStreamsTests;
+using DeviceStreamsTests.Setup;
 
 namespace Websockets
 {
-    public class WebsocketFactory : Setup
-    {
-        string deviceId;
-        DeviceClient deviceClient;
-        ServiceClient serviceClient;        
-
-        [SetUp]
-        public async Task Setup()
-        {
-            var device = await MakeNewDevice();
-            deviceId = device.Id;            
-
-            string deviceConnString = $"HostName=lefitche-hub-3.azure-devices.net;DeviceId={device.Id};SharedAccessKey={device.Authentication.SymmetricKey.PrimaryKey}";
-            deviceClient = DeviceClient.CreateFromConnectionString(deviceConnString);
-
-            serviceClient = ServiceClient.CreateFromConnectionString("HostName=lefitche-hub-3.azure-devices.net;SharedAccessKeyName=service;SharedAccessKey=s+3pkFuO8O4leS3mIFl1aW6O0/ASKEo85Cv0mjgrDUg=");
-        }
-
+    public class WebsocketFactory : SetupWebsocket
+    {       
         [Test]
         public async Task InitiateConnection()
         {
