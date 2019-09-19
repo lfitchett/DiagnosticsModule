@@ -10,6 +10,7 @@ using Microsoft.Azure.Devices.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using DeviceStreamsUtilities;
+using FileManager;
 
 namespace DeviceDiagnostics
 {
@@ -20,10 +21,13 @@ namespace DeviceDiagnostics
             Console.WriteLine("Starting");
             CancellationTokenSource ctSource = new CancellationTokenSource();
 
-            Task.WhenAny(
-                RunForwarder(args, ctSource.Token),
-                RunWebserver(args, ctSource.Token)
-            ).Wait();
+            //Task.WhenAny(
+            //    RunForwarder(args, ctSource.Token),
+            //    RunWebserver(args, ctSource.Token),
+            //    RunFileWatcher(args, ctSource.Token)
+            //).Wait();
+
+            RunFileWatcher(args, ctSource.Token).Wait();
 
             Console.WriteLine("Shutting down");
             ctSource.Cancel();
@@ -45,6 +49,11 @@ namespace DeviceDiagnostics
         public static Task RunWebserver(string[] args, CancellationToken ct)
         {
             return WebHost.CreateDefaultBuilder(args).UseStartup<Startup>().Build().RunAsync(ct);
+        }
+
+        public static Task RunFileWatcher(string[] args, CancellationToken ct)
+        {
+            return new FileWatcher().WatchFolder(ct);
         }
     }
 }

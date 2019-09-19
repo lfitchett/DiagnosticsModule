@@ -17,5 +17,6 @@
 
    <ItemGroup>
     <ProjectReference Include="..\..\DeviceStreamsUtilities\DeviceStreamsUtilities.csproj" />
+    <ProjectReference Include="..\..\FileManager\FileManager.csproj" />
   </ItemGroup>
 </Project>

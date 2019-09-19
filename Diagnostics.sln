@@ -9,7 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DeviceStreamsUtilities", "D
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DiagnosticsCli", "DiagnosticsCli\DiagnosticsCli.csproj", "{DF4F0CC8-3CAA-4D10-9433-D1B8AEFC4DA4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeviceStreamsTests", "DeviceStreamsTests\DeviceStreamsTests.csproj", "{6FC66B33-4BA5-4773-B63F-FB7843711BB0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DeviceStreamsTests", "DeviceStreamsTests\DeviceStreamsTests.csproj", "{6FC66B33-4BA5-4773-B63F-FB7843711BB0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileManager", "FileManager\FileManager.csproj", "{DBA9AC09-EED9-4E34-A25F-F8D9D854CC17}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{6FC66B33-4BA5-4773-B63F-FB7843711BB0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6FC66B33-4BA5-4773-B63F-FB7843711BB0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6FC66B33-4BA5-4773-B63F-FB7843711BB0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DBA9AC09-EED9-4E34-A25F-F8D9D854CC17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DBA9AC09-EED9-4E34-A25F-F8D9D854CC17}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DBA9AC09-EED9-4E34-A25F-F8D9D854CC17}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DBA9AC09-EED9-4E34-A25F-F8D9D854CC17}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
