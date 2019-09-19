@@ -44,7 +44,7 @@ namespace DeviceDiagnostics
 
         public static Task RunWebserver(string[] args, CancellationToken ct)
         {
-            return Task.Run(WebHost.CreateDefaultBuilder(args).UseStartup<Startup>().Build().Run, ct);
+            return WebHost.CreateDefaultBuilder(args).UseStartup<Startup>().Build().RunAsync(ct);
         }
     }
 }
