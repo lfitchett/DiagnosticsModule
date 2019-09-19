@@ -32,7 +32,7 @@ namespace DeviceDiagnostics
 
         public static async Task RunForwarder(string[] args, CancellationToken ct)
         {
-            DeviceClient client = DeviceClient.CreateFromConnectionString("HostName=lefitche-hub-3.azure-devices.net;DeviceId=device4;SharedAccessKey=NRjCGhamp4JCZiZzrwwJ/QZWbAsQ8qHa8B0BZSOFBZg=");
+            ModuleClient client = ModuleClient.CreateFromConnectionString(@"HostName=lefitche-hub-3.azure-devices.net;DeviceId=device4;ModuleId=$edgeAgent;SharedAccessKey=TZxV7meBl+dQPHR5AGbMzON1i/efvMUJ38+BucUMou8=");
 
             await client.RegisterDeviceStreamCallback(async (webSocket, ct_func) =>
             {

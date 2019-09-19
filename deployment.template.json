@@ -76,7 +76,10 @@
                   "Binds": [
                     "/shared:/app/shared"
                   ]
-                }
+                },
+                "Env": [
+                  "TARGET_DIRECTORY=/app/shared"
+                ]
               }
             }
           }
