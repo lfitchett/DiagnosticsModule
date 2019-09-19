@@ -18,5 +18,16 @@ namespace DeviceStreamsUtilities
 
             return await DeviceStreamWebsocket.MakeWebSocket(streamInfo.Url, streamInfo.AuthorizationToken, ct);
         }
+
+        public static async Task<ClientWebSocket> ConnectToDevice(this ServiceClient serviceClient, string deviceId, string moduleId, CancellationToken ct, string streamName = "EdgeStream")
+        {
+            DeviceStreamRequest deviceStreamRequest = new DeviceStreamRequest(streamName);
+
+            Console.WriteLine($"Connecting to {deviceId}:{moduleId}");
+            DeviceStreamResponse streamInfo = await serviceClient.CreateStreamAsync(deviceId, moduleId, deviceStreamRequest, ct).ConfigureAwait(false);
+            Console.WriteLine($"Stream response received: Name={deviceStreamRequest.StreamName} IsAccepted={streamInfo.IsAccepted}");
+
+            return await DeviceStreamWebsocket.MakeWebSocket(streamInfo.Url, streamInfo.AuthorizationToken, ct);
+        }
     }
 }
