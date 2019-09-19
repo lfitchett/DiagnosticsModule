@@ -50,101 +50,95 @@ namespace Websockets
         [Test]
         public async Task TestListFiles()
         {
-            bool connected = false;
-            int callbackTimes = 0;
-
-            CancellationTokenSource canceler = new CancellationTokenSource();
-
             Directory.SetCurrentDirectory(targetDirectory);
             string expected = string.Join('\n', Directory.GetFiles("."));
 
-            Func<Task> sendMessages = async () =>
-            {
-                await Task.Delay(100);
-                using (ClientWebSocket webSocket = await serviceClient.ConnectToDevice(deviceId, canceler.Token))
-                using (HttpClient httpClient = new HttpClient(new WebsocketHttpMessageHandler(webSocket)))
-                {
-                    HttpResponseMessage response = await httpClient.GetAsync(@"http://localhost:5000/api/file/list");
-                    Assert.True(response.IsSuccessStatusCode, "Expected Get to succeed");
-
-                    string body = await response.Content.ReadAsStringAsync();
-                    Assert.AreEqual(expected, body);
-
-                    await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Normal close", CancellationToken.None);
-                }
-
-                canceler.CancelAfter(50);
-            };
-
-            Func<Task> forwardMessages = () =>
-            {
-                return deviceClient.RegisterDeviceStreamCallback((webSocket, ct) =>
-                    {
-                        connected = true;
-                        Interlocked.Increment(ref callbackTimes);
-
-                        return new WebsocketHttpForwarder(webSocket).StartForwarding(ct);
-                    }, canceler.Token);
-            };
-
-            try
-            {
-                await Task.WhenAny(
-                    forwardMessages(),
-                    sendMessages()
-                );
-            }
-            catch (OperationCanceledException) { }
-
-            Assert.IsTrue(connected);
-            Assert.AreEqual(1, callbackTimes);
+            HttpResponseMessage response = await TestRequest(@"http://localhost:5000/api/file/list", CancellationToken.None);
+            string body = await response.Content.ReadAsStringAsync();
+            Assert.AreEqual(expected, body);
         }
 
         [Test]
         public async Task TestSendSmallFile()
         {
-            string outputFile = $"{outputDir}/test.txt";
-            CancellationTokenSource canceler = new CancellationTokenSource();
+            string outputFile = $"{outputDir}/testSmall.txt";
+
+            HttpResponseMessage response = await TestRequest(@"http://localhost:5000/api/file?filename=smallFile.txt", CancellationToken.None);
+            Stream body = await response.Content.ReadAsStreamAsync();
+            using (FileStream file = File.OpenWrite(outputFile))
+            {
+                await body.CopyToAsync(file);
+            }
+
+            CompareFiles($"{targetDirectory}/smallFile.txt", outputFile);
+        }
+
+        [Test]
+        public async Task TestSendMediumFile()
+        {
+            string mediumFile = $"{targetDirectory}/mediumFile.txt";
+            using (var file = File.OpenWrite(mediumFile))
+            {
+                for (int i = 0; i < 1000000; i++)
+                {
+                    file.Write(Encoding.UTF8.GetBytes($"This is line {i}!\n"));
+                }
+            }
+
+            string outputFile = $"{outputDir}/testMedium.txt";
+
+            HttpResponseMessage response = await TestRequest(@"http://localhost:5000/api/file?filename=mediumFile.txt", CancellationToken.None);
+            Stream body = await response.Content.ReadAsStreamAsync();
+            using (FileStream file = File.OpenWrite(outputFile))
+            {
+                await body.CopyToAsync(file);
+            }
+
+            CompareFiles(mediumFile, outputFile);
+        }
+
+        private async Task<HttpResponseMessage> TestRequest(string url, CancellationToken cancellationToken)
+        {
+            HttpResponseMessage result = null;
+            CancellationTokenSource callbackCancler = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            int callbackTimes = 0;
 
             Func<Task> sendMessages = async () =>
             {
                 await Task.Delay(100);
-                using (ClientWebSocket webSocket = await serviceClient.ConnectToDevice(deviceId, canceler.Token))
+                using (ClientWebSocket webSocket = await serviceClient.ConnectToDevice(deviceId, cancellationToken))
                 using (HttpClient httpClient = new HttpClient(new WebsocketHttpMessageHandler(webSocket)))
                 {
-                    HttpResponseMessage response = await httpClient.GetAsync(@"http://localhost:5000/api/file?filename=smallFile.txt");
-                    Assert.True(response.IsSuccessStatusCode, "Expected Get to succeed");
+                    result = await httpClient.GetAsync(url);
+                    Assert.True(result.IsSuccessStatusCode, "Expected Get to succeed");
 
-                    Stream body = await response.Content.ReadAsStreamAsync();
-                    using (FileStream file = File.OpenWrite(outputFile))
-                    {
-                        await body.CopyToAsync(file);
-                    }
-
-                    await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Normal close", CancellationToken.None);
+                    await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Normal close", cancellationToken);
                 }
 
-                canceler.CancelAfter(50);
+                callbackCancler.CancelAfter(50);
             };
 
-            Func<Task> forwardMessages = () =>
+            Func<Task> forwardMessages = async () =>
             {
-                return deviceClient.RegisterDeviceStreamCallback((webSocket, ct) =>
+                try
                 {
-                    return new WebsocketHttpForwarder(webSocket).StartForwarding(ct);
-                }, canceler.Token);
+                    await deviceClient.RegisterDeviceStreamCallback(async (webSocket, ct) =>
+                        {
+                            Interlocked.Increment(ref callbackTimes);
+                            await new WebsocketHttpForwarder(webSocket).StartForwarding(ct);
+                        }, callbackCancler.Token);
+                }
+                catch (OperationCanceledException) { }
             };
 
-            try
-            {
-                await Task.WhenAny(
-                    forwardMessages(),
-                    sendMessages()
-                );
-            }
-            catch (OperationCanceledException) { }
+            Task forwarder = forwardMessages();
+            await sendMessages();
+            await forwarder;
 
-            CompareFiles($"{targetDirectory}/smallFile.txt", outputFile);
+            Assert.AreEqual(1, callbackTimes);
+            Assert.IsNotNull(result, "Expected to get result from server");
+
+            return result;
         }
 
         private void CompareFiles(string expected, string actual)
@@ -153,7 +147,7 @@ namespace Websockets
             using (var f1 = File.OpenRead(expected))
             using (var f2 = File.OpenRead(actual))
             {
-                Assert.AreEqual(md5.ComputeHash(f1), md5.ComputeHash(f2));
+                Assert.AreEqual(md5.ComputeHash(f1), md5.ComputeHash(f2), $"Expected files to be the same.");
             }
         }
     }
