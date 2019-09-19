@@ -14,6 +14,7 @@ using System.Net.Http;
 using Microsoft.AspNetCore.Http;
 using System.IO;
 using System.Security.Cryptography;
+using System.Linq;
 
 namespace Websockets
 {
@@ -34,8 +35,7 @@ namespace Websockets
         [Test]
         public async Task TestServer()
         {
-            Directory.SetCurrentDirectory(targetDirectory);
-            string expected = string.Join('\n', Directory.GetFiles("."));
+            var expected = Directory.EnumerateFiles(targetDirectory).Select(Path.GetFileName);
 
             using (HttpClient httpClient = new HttpClient())
             {
@@ -43,19 +43,26 @@ namespace Websockets
                 Assert.True(response.IsSuccessStatusCode, "Expected Get to succeed");
 
                 string body = await response.Content.ReadAsStringAsync();
-                Assert.AreEqual(expected, body);
+
+                foreach(string file in expected)
+                {
+                    Assert.That(body.Contains(file), $"Response was missing {file}.");
+                }
             }
         }
 
         [Test]
         public async Task TestListFiles()
         {
-            Directory.SetCurrentDirectory(targetDirectory);
-            string expected = string.Join('\n', Directory.GetFiles("."));
+            var expected = Directory.EnumerateFiles(targetDirectory).Select(Path.GetFileName);
 
             HttpResponseMessage response = await TestRequest(@"http://localhost:5000/api/file/list", CancellationToken.None);
             string body = await response.Content.ReadAsStringAsync();
-            Assert.AreEqual(expected, body);
+
+            foreach (string file in expected)
+            {
+                Assert.That(body.Contains(file), $"Response was missing {file}.");
+            }
         }
 
         [Test]

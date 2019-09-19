@@ -14,11 +14,6 @@ namespace DeviceDiagnostics.Controllers
     {
         public static readonly Lazy<string> SHARED_DIRECTORY = new Lazy<string>(() => Environment.GetEnvironmentVariable("TARGET_DIRECTORY"));
 
-        public FileController()
-        {
-            Directory.SetCurrentDirectory(SHARED_DIRECTORY.Value);
-        }
-
         // GET api/file?filename=
         [HttpGet]
         public FileResult Get([FromQuery] string filename, [FromServices] IFileProvider fileProvider)
@@ -28,16 +23,9 @@ namespace DeviceDiagnostics.Controllers
         }
 
         [Route("list")]
-        public ActionResult<string> ListAllFiles([FromQuery] string directory = ".")
+        public ActionResult<string> ListAllFiles([FromServices] IFileProvider fileProvider, [FromQuery] string directory = "")
         {
-            return string.Join('\n', Directory.GetFiles(directory));
-        }
-
-        [Route("test")]
-        public ActionResult<string> Test()
-        {
-            Console.WriteLine(Directory.GetCurrentDirectory());
-            return Directory.GetCurrentDirectory();
+            return string.Join('\n', fileProvider.GetDirectoryContents(directory).Select(f => $"{f.Name.PadRight(30)}{(f.IsDirectory ? "Directory" : $"{f.Length}").PadRight(16)}{f.LastModified}"));
         }
     }
 }
