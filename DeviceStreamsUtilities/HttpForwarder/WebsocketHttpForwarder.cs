@@ -15,8 +15,7 @@ namespace DeviceStreamsUtilities
     public class WebsocketHttpForwarder
     {
         private readonly WebSocket websocket;
-        private readonly byte[] responseBuffer = new byte[WebsocketHttpShared.BUFFER_SIZE];
-        private static readonly HttpClient httpClient = new HttpClient();
+        private readonly byte[] buffer = new byte[WebsocketHttpShared.BUFFER_SIZE];
 
         public WebsocketHttpForwarder(WebSocket websocket)
         {
@@ -27,64 +26,88 @@ namespace DeviceStreamsUtilities
         {
             while (!ct.IsCancellationRequested)
             {
-                Console.WriteLine("Waiting for request");
-                WebSocketReceiveResult websocketResponse = await websocket.ReceiveAsync(new ArraySegment<byte>(responseBuffer), ct);
-                if (websocketResponse.MessageType == WebSocketMessageType.Close)
+                HttpRequestMessage request = await WaitForRequest(ct);
+                if (request == null)
                 {
-                    break;
+                    return;
                 }
 
-                Console.WriteLine($"Recieved request");
-                string rawRequest = Encoding.UTF8.GetString(responseBuffer, 0, websocketResponse.Count);
+                HttpResponseMessage response = await MakeRequest(request, ct);
 
-                while (!websocketResponse.EndOfMessage)
-                {
-                    websocketResponse = await websocket.ReceiveAsync(new ArraySegment<byte>(responseBuffer), ct);
-                    rawRequest += Encoding.UTF8.GetString(responseBuffer, 0, websocketResponse.Count);
-                }
+                await ForwardResponse(response, ct);
+            }
+        }
 
-                HttpRequestMessage request = JsonConvert.DeserializeObject<HttpRequestMessage>(rawRequest);
-                Console.WriteLine($"Forwarding request to {request.RequestUri}");
+        private async Task<HttpRequestMessage> WaitForRequest(CancellationToken ct)
+        {
+            Console.WriteLine("Waiting for request");
+            WebSocketReceiveResult websocketResponse = await websocket.ReceiveAsync(new ArraySegment<byte>(buffer), ct);
+            if (websocketResponse.MessageType == WebSocketMessageType.Close)
+            {
+                Console.WriteLine("Websocket closed normally");
+                return null;
+            }
 
+            Console.WriteLine($"Recieved request");
+            string rawRequest = Encoding.UTF8.GetString(buffer, 0, websocketResponse.Count);
+
+            while (!websocketResponse.EndOfMessage)
+            {
+                websocketResponse = await websocket.ReceiveAsync(new ArraySegment<byte>(buffer), ct);
+                rawRequest += Encoding.UTF8.GetString(buffer, 0, websocketResponse.Count);
+            }
+
+            return JsonConvert.DeserializeObject<HttpRequestMessage>(rawRequest);
+        }
+
+        private async Task<HttpResponseMessage> MakeRequest(HttpRequestMessage request, CancellationToken ct)
+        {
+            Console.WriteLine($"Forwarding request to {request.RequestUri}");
+            using (HttpClient httpClient = new HttpClient())
+            {
                 HttpResponseMessage response = await httpClient.SendAsync(request, ct);
                 Console.WriteLine($"Got response. Status: {response.StatusCode}");
-
-                HttpContent content = response.Content;
-                response.Content = null;
-
-                Console.WriteLine("Sending headers");
-                byte[] responseBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(response));
-                await websocket.SendAsync(new ArraySegment<byte>(responseBytes), WebSocketMessageType.Binary, true, ct);
-
-                Console.WriteLine("Sending content");
-                string contentSerialized = JsonConvert.SerializeObject(content.Headers.AsEnumerable().ToArray());
-                Console.WriteLine(contentSerialized);
-                byte[] contentBytes = Encoding.UTF8.GetBytes(contentSerialized);
-                await websocket.SendAsync(new ArraySegment<byte>(contentBytes), WebSocketMessageType.Binary, true, ct);
-                if (content.Headers.Contains("Content-Length"))
-                {
-                    int length = int.Parse(content.Headers.GetValues("Content-Length").First());
-
-                    Stream stream = await content.ReadAsStreamAsync();
-                    while (stream.Position < stream.Length)
-                    {
-                        int numToSend = stream.Read(responseBuffer, 0, responseBuffer.Length);
-                        await websocket.SendAsync(new ArraySegment<byte>(responseBuffer, 0, numToSend), WebSocketMessageType.Binary, true, ct);
-                    }
-                }
-                else
-                {
-                    byte[] body = await content.ReadAsByteArrayAsync();
-                    if(body.Length == 0)
-                    {
-                        body = Encoding.UTF8.GetBytes("No Content");
-                    }
-
-                    await websocket.SendAsync(new ArraySegment<byte>(body), WebSocketMessageType.Binary, true, ct);
-                }
-
-                Console.WriteLine("Finished forwarding");
+                return response;
             }
+        }
+
+        private async Task ForwardResponse(HttpResponseMessage response, CancellationToken ct)
+        {
+            HttpContent content = response.Content;
+            response.Content = null;
+
+            Console.WriteLine("Sending headers");
+            byte[] responseBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(response));
+            await websocket.SendAsync(new ArraySegment<byte>(responseBytes), WebSocketMessageType.Binary, true, ct);
+
+            Console.WriteLine("Sending content headers");
+            byte[] contentBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(content.Headers.AsEnumerable().ToArray()));
+            await websocket.SendAsync(new ArraySegment<byte>(contentBytes), WebSocketMessageType.Binary, true, ct);
+
+            Console.WriteLine("Sending content body");
+            if (content.Headers.Contains("Content-Length"))
+            {
+                int length = int.Parse(content.Headers.GetValues("Content-Length").First());
+
+                Stream stream = await content.ReadAsStreamAsync();
+                while (stream.Position < stream.Length)
+                {
+                    int numToSend = stream.Read(buffer, 0, buffer.Length);
+                    await websocket.SendAsync(new ArraySegment<byte>(buffer, 0, numToSend), WebSocketMessageType.Binary, true, ct);
+                }
+            }
+            else
+            {
+                byte[] body = await content.ReadAsByteArrayAsync();
+                if (body.Length == 0)
+                {
+                    body = Encoding.UTF8.GetBytes("No Content");
+                }
+
+                await websocket.SendAsync(new ArraySegment<byte>(body), WebSocketMessageType.Binary, true, ct);
+            }
+
+            Console.WriteLine("Finished forwarding");
         }
     }
 }
