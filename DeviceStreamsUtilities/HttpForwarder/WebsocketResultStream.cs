@@ -26,7 +26,7 @@ namespace DeviceStreamsUtilities.HttpForwarder
                 return 0;
             }
 
-            WebSocketReceiveResult websocketResponse = await websocket.ReceiveAsync(new ArraySegment<byte>(buffer, offset, (int)Math.Max(remaining, count)), cancellationToken);
+            WebSocketReceiveResult websocketResponse = await websocket.ReceiveAsync(new ArraySegment<byte>(buffer, offset, (int)Math.Min(remaining, count)), cancellationToken);
             Position += websocketResponse.Count;
             return websocketResponse.Count;
         }

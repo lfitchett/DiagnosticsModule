@@ -79,7 +79,8 @@ namespace Websockets
             string mediumFile = $"{targetDirectory}/mediumFile.txt";
             using (var file = File.OpenWrite(mediumFile))
             {
-                for (int i = 0; i < 1000000; i++)
+                /* This makes a file ~4KB */
+                for (int i = 0; i < 200000; i++)
                 {
                     file.Write(Encoding.UTF8.GetBytes($"This is line {i}!\n"));
                 }
