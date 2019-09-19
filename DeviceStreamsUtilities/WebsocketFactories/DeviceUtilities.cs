@@ -11,7 +11,31 @@ namespace DeviceStreamsUtilities
 {
     public static class DeviceUtilities
     {
-        public static async Task RegisterDeviceStreamCallback(this DeviceClient moduleClient, Func<ClientWebSocket, CancellationToken, Task> callback, CancellationToken ct)
+        public static Task RegisterDeviceStreamCallback(this DeviceClient deviceClient, Func<ClientWebSocket, CancellationToken, Task> callback, CancellationToken ct)
+        {
+            Func<Task<DeviceStreamRequest>> getRequest = async () =>
+            {
+                DeviceStreamRequest request = await deviceClient.WaitForDeviceStreamRequestAsync(ct);
+                await deviceClient.AcceptDeviceStreamRequestAsync(request, ct).ConfigureAwait(false);
+                return request;
+            };
+
+            return RegisterDeviceStreamCallback(getRequest, callback, ct);
+        }
+
+        public static Task RegisterDeviceStreamCallback(this ModuleClient moduleClient, Func<ClientWebSocket, CancellationToken, Task> callback, CancellationToken ct)
+        {
+            Func<Task<DeviceStreamRequest>> getRequest = async () =>
+            {
+                DeviceStreamRequest request = await moduleClient.WaitForDeviceStreamRequestAsync(ct);
+                await moduleClient.AcceptDeviceStreamRequestAsync(request, ct).ConfigureAwait(false);
+                return request;
+            };
+
+            return RegisterDeviceStreamCallback(getRequest, callback, ct);
+        }
+
+        private static async Task RegisterDeviceStreamCallback(Func<Task<DeviceStreamRequest>> getRequest, Func<ClientWebSocket, CancellationToken, Task> callback, CancellationToken ct)
         {
             int sleeptime = 1000;
             // This will run until the cancelation token is canceled
@@ -21,10 +45,8 @@ namespace DeviceStreamsUtilities
                 DeviceStreamRequest request;
                 try
                 {
-                    request = await moduleClient.WaitForDeviceStreamRequestAsync(ct);
-
+                    request = await getRequest();
                     Console.WriteLine("Got connection request");
-                    await moduleClient.AcceptDeviceStreamRequestAsync(request, ct).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
