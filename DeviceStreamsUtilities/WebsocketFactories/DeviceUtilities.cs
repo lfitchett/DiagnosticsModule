@@ -48,7 +48,7 @@ namespace DeviceStreamsUtilities
                     {
                         await callback(webSocket, ct);
                     }
-                    catch (Exception ex)
+                    catch (WebSocketException ex)
                     {
                         Console.WriteLine("Websocket threw exception.");
                         Console.WriteLine(ex);
