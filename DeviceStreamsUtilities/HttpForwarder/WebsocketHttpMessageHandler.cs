@@ -30,44 +30,27 @@ namespace DeviceStreamsUtilities
             byte[] data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(request));
             await websocket.SendAsync(new ArraySegment<byte>(data), WebSocketMessageType.Binary, true, cancellationToken);
 
-            /* recieve headers */
-            WebSocketReceiveResult websocketResponse = await websocket.ReceiveAsync(new ArraySegment<byte>(responseBuffer), cancellationToken);
-            string rawResponse = Encoding.UTF8.GetString(responseBuffer, 0, websocketResponse.Count);
+            /* recieve and reconstruct response headers */
+            HttpResponseMessage response = await RecieveAndParse<HttpResponseMessage>(cancellationToken);
 
-            /* reconstruct response */
-            HttpResponseMessage response = JsonConvert.DeserializeObject<HttpResponseMessage>(rawResponse);
-
-            /* reconstruct content headers */
-            websocketResponse = await websocket.ReceiveAsync(new ArraySegment<byte>(responseBuffer), cancellationToken);
-            string rawContentHeaders = Encoding.UTF8.GetString(responseBuffer, 0, websocketResponse.Count);
-            var contentHeaders = JsonConvert.DeserializeObject<KeyValuePair<string, string[]>[]>(rawContentHeaders);
+            /* recieve and reconstruct response content headers */
+            KeyValuePair<string, string[]>[] contentHeaders = await RecieveAndParse<KeyValuePair<string, string[]>[]>(cancellationToken);
 
             /* apply headers to temp object */
-            response.Content = new StringContent("");
-            Action applyHeaders = () =>
-            {
-                contentHeaders.ToList().ForEach((h) =>
-                {
-                    response.Content.Headers.Remove(h.Key);
-                    if (h.Value.Length > 1)
-                        response.Content.Headers.Add(h.Key, h.Value);
-                    else
-                        response.Content.Headers.Add(h.Key, h.Value[0]);
-                });
-            };
-            applyHeaders();
+            HttpContentHeaders tempHeaders = new StringContent("").Headers;
+            ReplaceHeaders(tempHeaders, contentHeaders);
 
             /* recieve content */
-            if (response.Content.Headers.Contains("Content-Length"))
+            if (tempHeaders.Contains("Content-Length"))
             {
                 /* large data case */
-                int length = int.Parse(response.Content.Headers.GetValues("Content-Length").First());
+                int length = int.Parse(tempHeaders.GetValues("Content-Length").First());
                 response.Content = new StreamContent(new WebsocketResultStream(length, websocket));
             }
             else
             {
                 /* small data case */
-                websocketResponse = await websocket.ReceiveAsync(new ArraySegment<byte>(responseBuffer), cancellationToken);
+                WebSocketReceiveResult websocketResponse = await websocket.ReceiveAsync(new ArraySegment<byte>(responseBuffer), cancellationToken);
                 List<byte> rawBody = new List<byte>();
                 rawBody.AddRange(responseBuffer.Take(websocketResponse.Count));
 
@@ -81,9 +64,38 @@ namespace DeviceStreamsUtilities
             }
 
             /* apply headers to final content */
-            applyHeaders();
+            ReplaceHeaders(response.Content.Headers, contentHeaders);
 
             return response;
+        }
+
+        private async Task<T> RecieveAndParse<T>(CancellationToken ct)
+        {
+            WebSocketReceiveResult websocketResponse = await websocket.ReceiveAsync(new ArraySegment<byte>(responseBuffer), ct);
+            string rawResponse = Encoding.UTF8.GetString(responseBuffer, 0, websocketResponse.Count);
+            while (!websocketResponse.EndOfMessage)
+            {
+                websocketResponse = await websocket.ReceiveAsync(new ArraySegment<byte>(responseBuffer), ct);
+                rawResponse += Encoding.UTF8.GetString(responseBuffer, 0, websocketResponse.Count);
+            }
+
+            return JsonConvert.DeserializeObject<T>(rawResponse);
+        }
+
+        private void ReplaceHeaders(HttpContentHeaders content, IEnumerable<KeyValuePair<string, string[]>> headersToAdd)
+        {
+            foreach(var header in headersToAdd) 
+            {
+                content.Remove(header.Key);
+                if (header.Value.Count() > 1)
+                {
+                    content.Add(header.Key, header.Value);
+                }
+                else
+                {
+                    content.Add(header.Key, header.Value.First());
+                }
+            }
         }
     }
 }
