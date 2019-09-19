@@ -19,4 +19,16 @@
     <ProjectReference Include="..\modules\DeviceDiagnostics\DeviceDiagnostics.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="testFiles\smallFile.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="testFiles\test1.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="testFiles\test2.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

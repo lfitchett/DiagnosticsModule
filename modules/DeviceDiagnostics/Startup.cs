@@ -28,7 +28,7 @@ namespace DeviceDiagnostics
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
-            services.AddSingleton<IFileProvider>(new PhysicalFileProvider(FileController.SHARED_DIRECTORY));
+            services.AddSingleton<IFileProvider>(new PhysicalFileProvider(FileController.SHARED_DIRECTORY.Value));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

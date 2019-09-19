@@ -12,6 +12,7 @@ using DeviceStreamsTests;
 using DeviceStreamsTests.Setup;
 using System.Net.Http;
 using Microsoft.AspNetCore.Http;
+using System.IO;
 
 namespace Websockets
 {
@@ -20,13 +21,16 @@ namespace Websockets
         [Test]
         public async Task TestServer()
         {
+            Directory.SetCurrentDirectory(targetDirectory);
+            string expected = string.Join('\n', Directory.GetFiles("."));
+
             using (HttpClient httpClient = new HttpClient())
             {
                 HttpResponseMessage response = await httpClient.GetAsync(@"http://localhost:5000/api/file/list");
                 Assert.True(response.IsSuccessStatusCode, "Expected Get to succeed");
 
                 string body = await response.Content.ReadAsStringAsync();
-                Assert.IsNotEmpty(body);
+                Assert.AreEqual(expected, body);
             }
         }
 
@@ -38,6 +42,9 @@ namespace Websockets
 
             CancellationTokenSource canceler = new CancellationTokenSource();
 
+            Directory.SetCurrentDirectory(targetDirectory);
+            string expected = string.Join('\n', Directory.GetFiles("."));
+
             Func<Task> sendMessages = async () =>
             {
                 await Task.Delay(100);
@@ -48,7 +55,7 @@ namespace Websockets
                     Assert.True(response.IsSuccessStatusCode, "Expected Get to succeed");
 
                     string body = await response.Content.ReadAsStringAsync();
-                    Assert.IsNotEmpty(body);
+                    Assert.AreEqual(expected, body);
 
                     await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Normal close", CancellationToken.None);
                 }
@@ -69,7 +76,7 @@ namespace Websockets
 
             try
             {
-                await Task.WhenAll(
+                await Task.WhenAny(
                     forwardMessages(),
                     sendMessages()
                 );

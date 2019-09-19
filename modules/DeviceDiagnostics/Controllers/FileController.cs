@@ -12,11 +12,11 @@ namespace DeviceDiagnostics.Controllers
     [ApiController]
     public class FileController : ControllerBase
     {
-        public const string SHARED_DIRECTORY = @"C:\Users\Lee\Documents\Test\From";
+        public static readonly Lazy<string> SHARED_DIRECTORY = new Lazy<string>(() => Environment.GetEnvironmentVariable("TARGET_DIRECTORY"));
 
         public FileController()
         {
-            Directory.SetCurrentDirectory(SHARED_DIRECTORY);
+            Directory.SetCurrentDirectory(SHARED_DIRECTORY.Value);
         }
 
         // GET api/file?filename=

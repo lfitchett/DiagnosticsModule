@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,13 +12,20 @@ namespace DeviceStreamsTests.Setup
     public class SetupWebserver : SetupClients
     {
         protected CancellationTokenSource cancelServer = new CancellationTokenSource();
+        protected string targetDirectory;
         private Task server;
 
         [OneTimeSetUp]
-        public void StartServer()
+        public Task StartServer()
         {
+            targetDirectory = $"{Environment.CurrentDirectory}/testFiles";
+            Assert.IsTrue(Directory.Exists(targetDirectory), "Test directory not found");
+            Environment.SetEnvironmentVariable("TARGET_DIRECTORY", targetDirectory);
+
             string[] args = { "Test" };
             server = DeviceDiagnostics.Diagnostics.RunWebserver(args, cancelServer.Token);
+
+            return Task.Delay(200);
         }
 
         [SetUp]

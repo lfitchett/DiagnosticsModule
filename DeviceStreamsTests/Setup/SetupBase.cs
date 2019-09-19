@@ -23,13 +23,13 @@ namespace DeviceStreamsTests.Setup
         [OneTimeTearDown]
         public async Task RemoveDevices()
         {
-            await registryManager.RemoveDevices2Async(addedDevices);
+            var test = await registryManager.RemoveDevices2Async(addedDevices);
             registryManager.Dispose();
         }
 
         protected async Task<Device> MakeNewDevice()
         {
-            Device device = await registryManager.AddDeviceAsync(new Device($"TestDevice{Guid.NewGuid().ToString()}"));
+            Device device = await registryManager.AddDeviceAsync(new Device($"TestDevice_{Guid.NewGuid().ToString()}"));
             addedDevices.Add(device);
             return device;
         }
