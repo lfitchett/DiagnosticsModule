@@ -21,13 +21,12 @@ namespace DeviceDiagnostics
             Console.WriteLine("Starting");
             CancellationTokenSource ctSource = new CancellationTokenSource();
 
-            //Task.WhenAny(
-            //    RunForwarder(args, ctSource.Token),
-            //    RunWebserver(args, ctSource.Token),
-            //    RunFileWatcher(args, ctSource.Token)
-            //).Wait();
+            Func<string[], CancellationToken, Task>[] jobs = { RunForwarder, RunWebserver, RunFileWatcher };
+            Task[] tasks = jobs.Select(j => j(args, ctSource.Token)).ToArray();
+            Task.WaitAny(tasks);
 
-            RunFileWatcher(args, ctSource.Token).Wait();
+            Task[] errored = tasks.Where(t => t.IsFaulted && !t.Exception.InnerExceptions.All(e => e is OperationCanceledException)).ToArray();
+            Task.WaitAll(errored);
 
             Console.WriteLine("Shutting down");
             ctSource.Cancel();
