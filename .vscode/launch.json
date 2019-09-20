@@ -13,7 +13,11 @@
             "args": [],
             "cwd": "${workspaceFolder}/modules/DeviceDiagnostics",
             "console": "internalConsole",
-            "stopAtEntry": false
+            "stopAtEntry": false,
+            "env": {
+                "MAX_DISK_BYTES": "10000000",
+                "MAX_DISK_PERCENT": "25"
+            }
         },
         {
             "name": ".NET Core Attach",

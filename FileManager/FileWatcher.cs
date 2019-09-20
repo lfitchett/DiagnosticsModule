@@ -1,25 +1,41 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace FileManager
 {
-    public class FileWatcher
+    public partial class FileWatcher
     {
+        private string incomingFolder = @"C:\Users\Lee\Documents\Test\From\";
+        private string dumpsFolder = @"C:\Users\Lee\Documents\Test\To\";
+        private long maxDiskBytes = long.MaxValue;
+        private double maxDiskPercent = 50;
+
+        public FileWatcher()
+        {
+            if (!Directory.Exists(dumpsFolder))
+            {
+                Directory.CreateDirectory(dumpsFolder);
+            }
+
+            if (long.TryParse(Environment.GetEnvironmentVariable("MAX_DISK_BYTES"), out long mdb)) { maxDiskBytes = mdb; }
+            if (double.TryParse(Environment.GetEnvironmentVariable("MAX_DISK_PERCENT"), out double mdp)) { maxDiskPercent = mdp; }
+        }
+
         public async Task WatchFolder(CancellationToken cancellationToken)
         {
-            string folder = @"C:\Users\Lee\Documents\Test\From\";
+            CleanSpace();
+
             CancellationTokenSource watchCanceler = new CancellationTokenSource();
             Console.WriteLine("Making filewatcher");
 
             using (FileSystemWatcher watcher = new FileSystemWatcher())
             {
-                watcher.Path = folder;
-
-                // Watch for changes in LastAccess and LastWrite times, and
-                // the renaming of files or directories.
-                //watcher.NotifyFilter = NotifyFilters
+                watcher.Path = incomingFolder;
+                watcher.NotifyFilter = NotifyFilters.LastWrite;
 
                 watcher.Error += (sender, error) =>
                 {
@@ -45,11 +61,6 @@ namespace FileManager
                 catch (OperationCanceledException) { }
             }
         }
-
-        // Define the event handlers.
-        private static void OnChanged(object source, FileSystemEventArgs e) =>
-            // Specify what is done when a file is changed, created, or deleted.
-            Console.WriteLine($"File: {e.FullPath} {e.ChangeType}");
 
         private static void OnRenamed(object source, RenamedEventArgs e) =>
             // Specify what is done when a file is renamed.

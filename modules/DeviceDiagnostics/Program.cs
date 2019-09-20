@@ -21,6 +21,8 @@ namespace DeviceDiagnostics
             Console.WriteLine("Starting");
             CancellationTokenSource ctSource = new CancellationTokenSource();
 
+            RunFileWatcher(args, ctSource.Token).Wait();
+
             Func<string[], CancellationToken, Task>[] jobs = { RunForwarder, RunWebserver, RunFileWatcher };
             Task[] tasks = jobs.Select(j => j(args, ctSource.Token)).ToArray();
             Task.WaitAny(tasks);
