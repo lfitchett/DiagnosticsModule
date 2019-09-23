@@ -36,6 +36,29 @@ namespace FilewatcherTests
         }
 
         [Test]
+        public async Task CleanupOnStartup()
+        {
+            Environment.SetEnvironmentVariable("MAX_DISK_BYTES", "4500000");
+
+            CancellationTokenSource cts = new CancellationTokenSource();
+
+            Parallel.For(0, 10, i =>
+            {
+                TestUtilities.MakeBigFile(Path.Combine(incomingDir, $"test{i}.txt"), 1000);
+            });
+
+            FileWatcher watcher = new FileWatcher();
+            Task watchTask = watcher.WatchFolder(cts.Token);
+
+            await Task.Delay(50);
+            cts.Cancel();
+            await watchTask;
+
+            string[] files = Directory.GetFiles(storageDir);
+            Assert.AreEqual(4, files.Length, "Expected 4 files in storage directory");
+        }
+
+        [Test]
         public async Task CleanupOrdering()
         {
             Environment.SetEnvironmentVariable("MAX_DISK_BYTES", "4500000");
