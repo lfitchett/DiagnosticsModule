@@ -9,12 +9,12 @@ Deploy the diagnostics module to the device. The module has 2 required and 2 opt
 * ```MAX_DISK_BYTES```: Maximum total file size that will be stored in ```STORAGE_DIRECTORY```. Default infinity.
 * ```MAX_DISK_PERCENT```: Maximum percentage of disk used by stored files. Default ```50```.
 
-[Example deployment manifest](docs\example_deployment.amd64.json)
+[Example deployment manifest](docs/example_deployment.amd64.json)
 
 ### CLI
 Once the module is deployed, the command line can be used with the following commands.
 * ```ls```: list files avaliable to copy
-* ```copyfile -s <targetFileName> -d <destinationFileName>```: copys \<targetFileName\> from module to developer's computer
+* ```copyfile -s <targetFileName> -d <destinationFileName>```: copys \<targetFileName\> from module to developer's computer at \<destinationFileName\>.
 
 ## Model
 ![model](docs/DiagnosticsModule.png "Diagnostics Module"  )
