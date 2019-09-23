@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace DeviceStreamsUtilities.HttpForwarder
+namespace DeviceStreamsUtilities
 {
     public class WebsocketResultStream : Stream
     {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace DeviceStreamsUtilities.HttpForwarder
+namespace DeviceStreamsUtilities
 {
     public static class WebsocketHttpShared
     {
