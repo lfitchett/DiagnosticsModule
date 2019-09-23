@@ -15,7 +15,7 @@ namespace FileManager
         {
             SetTargetMaxBytes();
 
-            DirectoryInfo dumpsDir = new DirectoryInfo(dumpsFolder);
+            DirectoryInfo dumpsDir = new DirectoryInfo(storageDirectory);
             long currentSize = DirSize(dumpsDir);
             Console.WriteLine($"Currently using {currentSize} out of {targetMaxBytes}.");
 
@@ -33,7 +33,7 @@ namespace FileManager
                 }
 
                 Console.WriteLine($"Finished cleaning.");
-                Console.WriteLine($"Now using {DirSize(new DirectoryInfo(dumpsFolder))} out of {maxDiskBytes}.");
+                Console.WriteLine($"Now using {DirSize(new DirectoryInfo(storageDirectory))} out of {maxDiskBytes}.");
             }
         }
 
@@ -49,7 +49,7 @@ namespace FileManager
 
         private void SetTargetMaxBytes()
         {
-            long maxBytesFromPercent = (long)(maxDiskPercent / 100 * GetAvaliableSpace(new DirectoryInfo(dumpsFolder)));
+            long maxBytesFromPercent = (long)(maxDiskPercent / 100 * GetAvaliableSpace(new DirectoryInfo(storageDirectory)));
             targetMaxBytes = Math.Min(maxDiskBytes, maxBytesFromPercent);
         }
     }

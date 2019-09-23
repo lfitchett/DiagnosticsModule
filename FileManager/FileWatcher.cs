@@ -9,16 +9,19 @@ namespace FileManager
 {
     public partial class FileWatcher
     {
-        private string incomingFolder = @"C:\Users\Lee\Documents\Test\From\";
-        private string dumpsFolder = @"C:\Users\Lee\Documents\Test\To\";
+        private string incomingDirectory;
+        private string storageDirectory;
         private long maxDiskBytes = long.MaxValue;
         private double maxDiskPercent = 50;
 
         public FileWatcher()
         {
-            if (!Directory.Exists(dumpsFolder))
+            incomingDirectory = Environment.GetEnvironmentVariable("INCOMING_DIRECTORY") ?? "/dumps";
+            storageDirectory = Environment.GetEnvironmentVariable("STORAGE_DIRECTORY") ?? "/storage";
+
+            if (!Directory.Exists(storageDirectory))
             {
-                Directory.CreateDirectory(dumpsFolder);
+                Directory.CreateDirectory(storageDirectory);
             }
 
             if (long.TryParse(Environment.GetEnvironmentVariable("MAX_DISK_BYTES"), out long mdb)) { maxDiskBytes = mdb; }
@@ -34,7 +37,7 @@ namespace FileManager
 
             using (FileSystemWatcher watcher = new FileSystemWatcher())
             {
-                watcher.Path = incomingFolder;
+                watcher.Path = incomingDirectory;
                 watcher.NotifyFilter = NotifyFilters.LastWrite;
 
                 watcher.Error += (sender, error) =>

@@ -16,7 +16,7 @@ namespace FileManager
                 Console.WriteLine("Unexpected event");
             }
 
-            string newFile = Path.Combine(dumpsFolder, $"{e.Name}_{DateTime.Now.Ticks}");
+            string newFile = Path.Combine(storageDirectory, $"{e.Name}_{DateTime.Now.Ticks}");
             File.Move(e.FullPath, newFile);
 
             CleanSpace();
