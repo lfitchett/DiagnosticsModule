@@ -83,17 +83,9 @@ namespace Websockets
         [Test]
         public async Task TestSendMediumFile()
         {
-            string mediumFile = $"{targetDirectory}/mediumFile.txt";
-            using (var file = File.OpenWrite(mediumFile))
-            {
-                /* This makes a file ~4KB */
-                for (int i = 0; i < 200000; i++)
-                {
-                    file.Write(Encoding.UTF8.GetBytes($"This is line {i}!\n"));
-                }
-            }
-
             string outputFile = $"{outputDir}/testMedium.txt";
+            string mediumFile = $"{targetDirectory}/mediumFile.txt";
+            TestUtilities.MakeBigFile(mediumFile, 4000);
 
             HttpResponseMessage response = await TestRequest(@"http://localhost:5000/api/file?filename=mediumFile.txt", CancellationToken.None);
             Stream body = await response.Content.ReadAsStreamAsync();
