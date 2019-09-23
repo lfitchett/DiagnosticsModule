@@ -78,7 +78,8 @@
                   ]
                 },
                 "Env": [
-                  "TARGET_DIRECTORY=/app/shared"
+                  "TARGET_DIRECTORY=/app/shared",
+                  "EdgeHubConnectionString=HostName=lefitche-hub-3.azure-devices.net;DeviceId=device4;ModuleId=DeviceDiagnostics;SharedAccessKey=xPpMsSsbe08hZB8nlk8sF79TrNrO12Jxqq3luUlJTw4="
                 ]
               }
             }

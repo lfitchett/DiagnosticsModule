@@ -29,7 +29,7 @@ namespace DiagnosticsCli
             CancellationToken ct = cancelSource.Token;
 
             string deviceId = "device4";
-            string moduleId = "$edgeAgent";
+            string moduleId = "DeviceDiagnostics";
             string connString = "HostName=lefitche-hub-3.azure-devices.net;SharedAccessKeyName=service;SharedAccessKey=s+3pkFuO8O4leS3mIFl1aW6O0/ASKEo85Cv0mjgrDUg=";
 
 
