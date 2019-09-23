@@ -18,3 +18,6 @@ Once the module is deployed, the command line can be used with the following com
 
 ## Model
 ![model](docs/DiagnosticsModule.png "Diagnostics Module"  )
+
+## Code Map
+![code map](docs/CodeMap1.png "Code Map"  )
