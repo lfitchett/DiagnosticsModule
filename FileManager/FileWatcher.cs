@@ -30,7 +30,12 @@ namespace FileManager
 
         public async Task WatchFolder(CancellationToken cancellationToken)
         {
+            Console.WriteLine("Starting watching");
             CleanSpace();
+            foreach (var file in Directory.EnumerateFiles(incomingDirectory))
+            {
+                MoveFile(file);
+            }
 
             CancellationTokenSource watchCanceler = new CancellationTokenSource();
             Console.WriteLine("Making filewatcher");

@@ -52,6 +52,26 @@ namespace FilewatcherTests
         }
 
         [Test]
+        public async Task MoveExistingFile()
+        {
+            CancellationTokenSource cts = new CancellationTokenSource();
+            File.WriteAllText(Path.Combine(incomingDir, "test.txt"), "This is a test file!");
+
+            FileWatcher watcher = new FileWatcher();
+            Task watchTask = watcher.WatchFolder(cts.Token);
+
+            await Task.Delay(50);
+            cts.Cancel();
+            await watchTask;
+
+            string[] files = Directory.GetFiles(storageDir);
+            Assert.AreEqual(1, files.Length, "Expected only one file in storage directory");
+            string file = files[0];
+            Assert.True(file.Contains("test.txt"), "Expected file to contain original name");
+            Assert.AreEqual(File.ReadAllText(file), "This is a test file!", "Expected file contents to remain the same");
+        }
+
+        [Test]
         public async Task MoveMultiple()
         {
             CancellationTokenSource cts = new CancellationTokenSource();

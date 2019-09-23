@@ -16,8 +16,13 @@ namespace FileManager
                 Console.WriteLine("Unexpected event");
             }
 
-            string newFile = Path.Combine(storageDirectory, $"{e.Name}_{DateTime.Now.Ticks}");
-            File.Move(e.FullPath, newFile);
+            MoveFile(e.FullPath);
+        }
+
+        private void MoveFile(string filename)
+        {
+            string newFile = Path.Combine(storageDirectory, $"{Path.GetFileName(filename)}_{DateTime.Now.Ticks}");
+            File.Move(filename, newFile);
 
             CleanSpace();
         }
