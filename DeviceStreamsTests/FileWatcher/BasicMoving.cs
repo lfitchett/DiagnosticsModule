@@ -8,34 +8,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace DeviceStreamsTests
+namespace FilewatcherTests
 {
-    public class Filewatcher
-    {
-        private readonly string testDir, storageDir, incomingDir;
-
-        public Filewatcher()
-        {
-            testDir = Path.Combine(Directory.GetCurrentDirectory(), "runtime");
-            storageDir = Path.Combine(testDir, "storage");
-            incomingDir = Path.Combine(testDir, "incoming");
-        }
-
-        [SetUp]
-        public void Setup()
-        {
-            if (Directory.Exists(testDir))
-            {
-                Directory.Delete(testDir, true);
-            }
-
-            Directory.CreateDirectory(storageDir);
-            Directory.CreateDirectory(incomingDir);
-
-            Environment.SetEnvironmentVariable("STORAGE_DIRECTORY", storageDir);
-            Environment.SetEnvironmentVariable("INCOMING_DIRECTORY", incomingDir);
-        }
-
+    public class Filewatcher : FileWatcherSetup
+    {           
         [Test]
         public async Task StopWatching()
         {
