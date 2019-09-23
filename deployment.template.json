@@ -76,7 +76,12 @@
                   "Binds": [
                     "/shared:/app/shared"
                   ]
-                }
+                },
+                "Env": [
+                  "INCOMING_DIRECTORY=/shared",
+                  "STORAGE_DIRECTORY=/store",
+                  "MAX_DISK_BYTES=2000000000"
+                ]
               }
             }
           }

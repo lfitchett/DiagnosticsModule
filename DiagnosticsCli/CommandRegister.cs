@@ -11,7 +11,7 @@ namespace DiagnosticsCli
     {
         /// <summary>
         ///     Registers all commands
-        ///         getfile -s <targetFileName> -d <destinationFileName> : sends file from module to cli device
+        ///         copyfile -s <targetFileName> -d <destinationFileName> : sends file from module to cli device
         ///         ls : lista files in module shared folder
         /// </summary>
         /// <param name="manager"></param>
@@ -40,7 +40,7 @@ namespace DiagnosticsCli
                             {"-d", setDest }
                         };
 
-            parser.RegisterCommand("getfile", async () =>
+            parser.RegisterCommand("copyfile", async () =>
             {
                 if (source == null)
                 {
