@@ -67,6 +67,7 @@ namespace FileManager
                     await Task.Delay(Timeout.Infinite, CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, watchCanceler.Token).Token);
                 }
                 catch (OperationCanceledException) { }
+                Console.WriteLine("Stopped Watching");
             }
         }
 

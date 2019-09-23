@@ -4,6 +4,7 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,10 +23,7 @@ namespace FilewatcherTests
             FileWatcher watcher = new FileWatcher();
             Task watchTask = watcher.WatchFolder(cts.Token);
 
-            Parallel.For(0, 10, i =>
-            {
-                TestUtilities.MakeBigFile(Path.Combine(incomingDir, $"test{i}.txt"), 1000);
-            });
+            await Task.WhenAll(Enumerable.Range(0, 10).Select(i => TestUtilities.MakeBigFile(Path.Combine(incomingDir, $"test{i}.txt"), 1000)));
 
             await Task.Delay(50);
             cts.Cancel();
@@ -42,10 +40,7 @@ namespace FilewatcherTests
 
             CancellationTokenSource cts = new CancellationTokenSource();
 
-            Parallel.For(0, 10, i =>
-            {
-                TestUtilities.MakeBigFile(Path.Combine(incomingDir, $"test{i}.txt"), 1000);
-            });
+            await Task.WhenAll(Enumerable.Range(0, 10).Select(i => TestUtilities.MakeBigFile(Path.Combine(incomingDir, $"test{i}.txt"), 1000)));
 
             FileWatcher watcher = new FileWatcher();
             Task watchTask = watcher.WatchFolder(cts.Token);
@@ -70,7 +65,7 @@ namespace FilewatcherTests
 
             for (int i = 10; i < 20; i++)
             {
-                TestUtilities.MakeBigFile(Path.Combine(incomingDir, $"test{i}.txt"), 1000);
+                await TestUtilities.MakeBigFile(Path.Combine(incomingDir, $"test{i}.txt"), 1000);
             }
 
             await Task.Delay(50);

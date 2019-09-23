@@ -85,7 +85,7 @@ namespace Websockets
         {
             string outputFile = $"{outputDir}/testMedium.txt";
             string mediumFile = $"{targetDirectory}/mediumFile.txt";
-            TestUtilities.MakeBigFile(mediumFile, 4000);
+            await TestUtilities.MakeBigFile(mediumFile, 4000);
 
             HttpResponseMessage response = await TestRequest(@"http://localhost:5000/api/file?filename=mediumFile.txt", CancellationToken.None);
             Stream body = await response.Content.ReadAsStreamAsync();
