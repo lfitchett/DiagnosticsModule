@@ -1,5 +1,5 @@
 # Diagnostics Module
-This module used device streams to pull diagnostics data from an Anure IoT Edge device. It currently supports copying dump files to a developers machine using a command line interface.
+This module used device streams to pull diagnostics data from an Azure IoT Edge device. It currently supports copying dump files to a developers machine using a command line interface. It will take dump files from a shared volume and move them to a managed directory. It will keep the used space below a given limit by deleting the oldest files. 
 
 ## Usage
 ### Module
