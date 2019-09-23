@@ -55,8 +55,6 @@ namespace FileManager
                 // Add event handlers.
                 watcher.Changed += OnChanged;
                 watcher.Created += OnChanged;
-                watcher.Deleted += OnChanged;
-                watcher.Renamed += OnRenamed;
 
                 // Begin watching.
                 watcher.EnableRaisingEvents = true;
@@ -69,10 +67,6 @@ namespace FileManager
                 catch (OperationCanceledException) { }
                 Console.WriteLine("Stopped Watching");
             }
-        }
-
-        private static void OnRenamed(object source, RenamedEventArgs e) =>
-            // Specify what is done when a file is renamed.
-            Console.WriteLine($"File: {e.OldFullPath} renamed to {e.FullPath}");
+        }       
     }
 }
