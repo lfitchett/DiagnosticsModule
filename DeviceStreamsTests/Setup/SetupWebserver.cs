@@ -20,7 +20,7 @@ namespace DeviceStreamsTests.Setup
         {
             targetDirectory = $"{Environment.CurrentDirectory}/testFiles";
             Assert.IsTrue(Directory.Exists(targetDirectory), "Test directory not found");
-            Environment.SetEnvironmentVariable("TARGET_DIRECTORY", targetDirectory);
+            Environment.SetEnvironmentVariable("STORAGE_DIRECTORY", targetDirectory);
 
             string[] args = { "Test" };
             server = DeviceDiagnostics.Diagnostics.RunWebserver(args, cancelServer.Token);
