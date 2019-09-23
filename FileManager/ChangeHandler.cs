@@ -21,10 +21,11 @@ namespace FileManager
 
         private void MoveFile(string filename)
         {
-            string newFile = Path.Combine(storageDirectory, $"{Path.GetFileName(filename)}_{DateTime.Now.Ticks}");
-            File.Move(filename, newFile);
+            CleanSpace(new FileInfo(filename).Length);
 
-            CleanSpace();
+            string newFile = Path.Combine(storageDirectory, $"{Path.GetFileName(filename)}_{DateTime.Now.Ticks}");
+            Console.WriteLine($"Moving {filename} to {newFile}");
+            File.Move(filename, newFile);
         }
     }
 }

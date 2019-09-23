@@ -9,21 +9,28 @@ namespace FileManager
 {
     public partial class FileWatcher
     {
-        private long targetMaxBytes;
-
-        private void CleanSpace()
+        private long targetMaxBytes
         {
-            SetTargetMaxBytes();
+            get
+            {
+                long maxBytesFromPercent = (long)(maxDiskPercent / 100 * GetAvaliableSpace(new DirectoryInfo(storageDirectory)));
+                return Math.Min(maxDiskBytes, maxBytesFromPercent);
+            }
+        }
+
+        private void CleanSpace(long desiredFreeSpace = 0)
+        {
+            long targetBytes = targetMaxBytes - desiredFreeSpace;
 
             DirectoryInfo dumpsDir = new DirectoryInfo(storageDirectory);
             long currentSize = DirSize(dumpsDir);
             Console.WriteLine($"Currently using {currentSize} out of {targetMaxBytes}.");
 
 
-            if (currentSize > targetMaxBytes)
+            if (currentSize > targetBytes)
             {
                 Console.WriteLine("Cleaning disk space");
-                long amountToClean = currentSize - targetMaxBytes;
+                long amountToClean = currentSize - targetBytes;
                 IEnumerable<FileInfo> filesToRemove = dumpsDir.EnumerateFiles().OrderBy(f => f.LastWriteTime).TakeWhile(f => (amountToClean -= f.Length) >= 0 - f.Length);
 
                 foreach (FileInfo file in filesToRemove)
@@ -33,7 +40,7 @@ namespace FileManager
                 }
 
                 Console.WriteLine($"Finished cleaning.");
-                Console.WriteLine($"Now using {DirSize(new DirectoryInfo(storageDirectory))} out of {maxDiskBytes}.");
+                Console.WriteLine($"Now using {DirSize(new DirectoryInfo(storageDirectory))} out of {targetMaxBytes}.");
             }
         }
 
@@ -45,12 +52,6 @@ namespace FileManager
         private long DirSize(DirectoryInfo dir)
         {
             return dir.EnumerateFiles().Sum(f => f.Length) + dir.EnumerateDirectories().Sum(DirSize);
-        }
-
-        private void SetTargetMaxBytes()
-        {
-            long maxBytesFromPercent = (long)(maxDiskPercent / 100 * GetAvaliableSpace(new DirectoryInfo(storageDirectory)));
-            targetMaxBytes = Math.Min(maxDiskBytes, maxBytesFromPercent);
         }
     }
 }
